@@ -8,17 +8,17 @@ Channel.fromPath( file(params.sample_sheet) )
             def sample_id = row['SampleID']
             def bam_file = file(row['BAM'])
             return [ sample_id, bam_file ]
-        }.into{samples}
+        }.set{samples}
 
 
 process index_bam {
-    tag { "${bam_file}" }
+    tag { "${sample_id}" }
     echo true
     publishDir "${params.out_dir}/${sample_id}", mode: 'copy', overwrite: false
     input:
     set val(sample_id), file(bam_file) from samples
     output:
-    set file("*.bai")
+    file("*.bai")
     script:
     """
     ${params.samtools_base}/samtools index ${bam_file}
