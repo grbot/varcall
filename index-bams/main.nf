@@ -5,16 +5,20 @@
 Channel.fromPath( file(params.sample_sheet) )
         .splitCsv(header: true, sep: '\t')
         .map{row ->
+            def sample_id = row['SampleID']
             def bam_file = file(row['BAM'])
-            return [ bam_file ]
+            return [ sample_id, bam_file ]
         }.into{samples}
 
 
 process index_bam {
     tag { "${bam_file}" }
     echo true
+    publishDir "${params.out_dir}/${sample_id}", mode: 'copy', overwrite: false
     input:
-    set file(bam_file) from samples
+    set val(sample_id), file(bam_file) from samples
+    output:
+    set file("*.bai")
     script:
     """
     ${params.samtools_base}/samtools index ${bam_file}
