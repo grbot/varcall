@@ -27,7 +27,7 @@ process print_sample_info {
 process run_haplotype_caller_on_autosomes {
     tag { "${params.project_name}.${sample_id}.${chr}.rHCoA" }
     memory { 4.GB * task.attempt }
-    cpus { 1 }
+    cpus { 4 }
     publishDir "${params.out_dir}/${sample_id}", mode: 'copy', overwrite: false
 
     input:
@@ -67,7 +67,8 @@ samples_4.filter{it[1] == 'F'}.set{samples_female}
 // Males
 process run_haplotype_caller_on_x_par1_male {
      tag { "${params.project_name}.${sample_id}.rHCoXP1M" }
-
+     memory { 4.GB * task.attempt }
+     cpus { 4 }
      publishDir "${params.out_dir}/${sample_id}", mode: 'copy', overwrite: false
 
      input:
@@ -101,7 +102,8 @@ process run_haplotype_caller_on_x_par1_male {
 
 process run_haplotype_caller_on_x_par2_male {
      tag { "${params.project_name}.${sample_id}.rHCoXP2M" }
-
+     memory { 4.GB * task.attempt }
+     cpus { 4 }
      publishDir "${params.out_dir}/${sample_id}", mode: 'copy', overwrite: false
 
      input:
@@ -135,7 +137,8 @@ process run_haplotype_caller_on_x_par2_male {
 
 process run_haplotype_caller_on_x_nonpar_male {
      tag { "${params.project_name}.${sample_id}.rHCoXNPM" }
-
+     memory { 4.GB * task.attempt }
+     cpus { 4 }
      publishDir "${params.out_dir}/${sample_id}", mode: 'copy', overwrite: false
 
      input:
@@ -169,7 +172,8 @@ process run_haplotype_caller_on_x_nonpar_male {
 
 process run_haplotype_caller_on_y_par1_male {
      tag { "${params.project_name}.${sample_id}.rHCoYP1M" }
-
+     memory { 4.GB * task.attempt }
+     cpus { 4 }
      publishDir "${params.out_dir}/${sample_id}", mode: 'copy', overwrite: false
 
      input:
@@ -203,7 +207,8 @@ process run_haplotype_caller_on_y_par1_male {
 
 process run_haplotype_caller_on_y_par2_male {
      tag { "${params.project_name}.${sample_id}.rHCoYP2M" }
-
+     memory { 4.GB * task.attempt }
+     cpus { 4 }
      publishDir "${params.out_dir}/${sample_id}", mode: 'copy', overwrite: false
 
      input:
@@ -237,7 +242,8 @@ process run_haplotype_caller_on_y_par2_male {
 
 process run_haplotype_caller_on_y_nonpar_male {
      tag { "${params.project_name}.${sample_id}.rHCoYNPM" }
-
+     memory { 4.GB * task.attempt }
+     cpus { 4 }
      publishDir "${params.out_dir}/${sample_id}", mode: 'copy', overwrite: false
 
      input:
@@ -272,7 +278,8 @@ process run_haplotype_caller_on_y_nonpar_male {
 // Females
 process run_haplotype_caller_on_x_female {
      tag { "${params.project_name}.${sample_id}.rHCoXF" }
-
+     memory { 4.GB * task.attempt }
+     cpus { 4 }
      publishDir "${params.out_dir}/${sample_id}", mode: 'copy', overwrite: false
 
      input:
@@ -307,7 +314,8 @@ process run_haplotype_caller_on_x_female {
 
 process run_haplotype_caller_on_mt {
     tag { "${params.project_name}.${sample_id}.rHCoMT" }
-
+    memory { 4.GB * task.attempt }
+    cpus { 4 }
     publishDir "${params.out_dir}/${sample_id}", mode: 'copy', overwrite: false
 
     input:
@@ -343,7 +351,8 @@ autosome_calls.mix(mt_calls,x_par1_calls,x_nonpar_calls,x_par2_calls,x_calls,y_p
 
 process combine_gVCFs {
      tag { "${params.project_name}.${sample_id}.cCgVCF" }
-
+     memory { 4.GB * task.attempt }
+     cpus { 20 }
      publishDir "${params.out_dir}/${sample_id}", mode: 'copy', overwrite: false
 
      input:
