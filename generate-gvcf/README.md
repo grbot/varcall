@@ -32,9 +32,9 @@ nextflow -log nextflow.log run -w /spaces/gerrit/projects/adme/datasets/sahgp/ne
 
 The output directory will contain per sample directories. Each sample directory will contain
 
-1) `sample_id.[1-22].g.vcf.gz` files
-2) `sample_id.MT.g.vcf.gz`
-3)
- a) Female samples, a `sample_id.X.g.vcf.gz`
- b) Male samples, a  `sample_id.X_PAR1.g.vcf.gz,sample_id.X_PAR2.g.vcf.gz,sample_id.X_nonPAR.g.vcf.gz,sample_id.Y_PAR1.g.vcf.gz,sample_id.Y_nonPAR.g.vcf.gz`
-4) A `sample_id.g.vcf.gz` that is a combined, sorted and indexed file of the files above.  Would be easiest to use this file for downstream processing.
+1. `sample_id.[1-22].g.vcf.gz` files
+1. `sample_id.MT.g.vcf.gz`
+1. If
+   1. Female samples, a `sample_id.X.g.vcf.gz`
+   1. Male samples, a  `sample_id.X_PAR1.g.vcf.gz,sample_id.X_PAR2.g.vcf.gz,sample_id.X_nonPAR.g.vcf.gz,sample_id.Y_PAR1.g.vcf.gz,sample_id.Y_nonPAR.g.vcf.gz`
+1. A `sample_id.g.vcf.gz` that is a combined, sorted and indexed file of the files above.  Would be easiest to use this file for downstream processing.
