@@ -1,8 +1,7 @@
 params{
-  project_name = "1kg"
-  sample_sheet = "1kg_african.samplesheet.tsv"
-  sample_coverage = "low"
-  out_dir = "/spaces/gerrit/projects/adme/datasets/1kg_african/nextflow-out"
+  project_name = "sgdp"
+  sample_sheet = "/home/gerrit/projects/recalling/index-bams/sgdp.samplesheet.tsv"
+  out_dir = "/spaces/gerrit/projects/adme/datasets/sgdp/nextflow-out"
 
   // GATK specific settings
   gatk_base = "/spaces/gerrit/projects/adme/soft/gatk-4.0.8.1"
@@ -15,6 +14,8 @@ params{
   // Tabix settings
   tabix_base = "/spaces/gerrit/projects/adme/soft/tabix-0.2.6"
 
+  // Samtools settings
+  samtools_base = "/home/gerrit/software/samtools-0.1.19"
 }
 
 
@@ -35,15 +36,5 @@ profiles {
 	process.maxRetries = 5
 	process.maxErrors = 1000
         process.clusterOptions = '-M gerrit.botha@uct.ac.za -m abe'
-    }
-
-    wits_slurm {
-        process.executor = 'slurm'
-        process.queue = 'batch'
-        process.time = 96.h
-        process.errorStrategy = 'retry'
-        process.maxRetries = 5
-        process.maxErrors = 1000
-        process.clusterOptions = '--mail-user=gerrit.botha@uct.ac.za'
     }
 }
