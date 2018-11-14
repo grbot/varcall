@@ -1,0 +1,2 @@
+SampleID	Gender	FastqR1	FastqR2	BAM	gVCF
+NA12878	.	/global5/datasets/giab/NA12878/NA12878_1.fastq.gz	/global5/datasets/giab/NA12878/NA12878_2.fastq.gz	.	.
