@@ -82,7 +82,7 @@ process GenotypeGVCF_genes {
         ${params.gatk_base}/gatk \
             GenotypeGVCFs \
             -R ${params.ref_seq} \
-            -L ${params.gene_region_bed} \
+            -L ${bed_file} \
             -V ${gVCF_file} \
             -O ${vcf_out}
         """
