@@ -78,18 +78,16 @@ process run_mark_duplicates {
     """
 }
 
-md_bam.into{md_bam_1; md_bam_2; md_bam_3}
-
 process run_create_recalibration_table {
     tag { "${params.project_name}.${sample_id}.rCRT" }
     memory { 8.GB * task.attempt }
     publishDir "${params.out_dir}/${sample_id}", mode: 'copy', overwrite: false
 
     input:
-    set val(sample_id), file(bam_file) from md_bam_1
+    set val(sample_id), file(bam_file) from md_bam
 
     output:
-    set val(sample_id), file("${sample_id}.recal.table")  into recal_table
+    set val(sample_id), file("${sample_id}.md.bam"), file("${sample_id}.md.bai"), file("${sample_id}.recal.table")  into recal_table
     
     script:
     """
@@ -111,8 +109,7 @@ process run_recalibrate_bam {
     publishDir "${params.out_dir}/${sample_id}", mode: 'copy', overwrite: false
 
     input:
-    set val(sample_id), file(bam_file) from md_bam_2
-    set val(sample_id), file(recal_table_file) from recal_table
+    set val(sample_id), file(bam_file), file(bam_file_index), file(recal_table_file) from recal_table
 
     output:
     set val(sample_id), file("${sample_id}.md.recal.bam")  into recal_bam
