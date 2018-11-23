@@ -62,8 +62,7 @@ process run_mark_duplicates {
     set val(sample_id), file(bam_file) from raw_bam
 
     output:
-    set val(sample_id), file("${sample_id}.md.bam")  into md_bam
-    set val(sample_id), file("${sample_id}.md.bai") into md_bam_indexes
+    set val(sample_id), file("${sample_id}.md.bam"), file("${sample_id}.md.bai")  into md_bam
     
     """
     ${params.gatk_base}/gatk --java-options "-Xmx${params.gatk_md_mem}"  \
@@ -84,7 +83,7 @@ process run_create_recalibration_table {
     publishDir "${params.out_dir}/${sample_id}", mode: 'copy', overwrite: false
 
     input:
-    set val(sample_id), file(bam_file) from md_bam
+    set val(sample_id), file(bam_file), file(bam_file_index) from md_bam
 
     output:
     set val(sample_id), file("${sample_id}.md.bam"), file("${sample_id}.md.bai"), file("${sample_id}.recal.table")  into recal_table
