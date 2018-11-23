@@ -70,7 +70,7 @@ process run_combine_gvcfs {
     """
 }
 
-cohort_chr_calls.groupTuple().set{cohort_calls}
+cohort_chr_calls.toList().into{ cohort_calls }
 
 process run_concat_combine_gvcf {
      tag { "${params.project_name}.${params.cohort_id}.rCCG" }
@@ -78,7 +78,7 @@ process run_concat_combine_gvcf {
      publishDir "${params.out_dir}/${params.cohort_id}", mode: 'copy', overwrite: false
 
      input:
-     set val(params.cohort_id), file(gvcf) from cohort_calls
+     set file(gvcf) from cohort_calls
 
      output:
 	   set val(params.cohort_id), file("${params.cohort_id}.g.vcf.gz") into combine_calls

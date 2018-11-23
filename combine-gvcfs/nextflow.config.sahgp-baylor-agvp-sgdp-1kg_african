@@ -25,9 +25,10 @@ process{
     time = { 96.h * task.attempt }
 
     withLabel: bigmem{
-        cpus = { 1 * task.attempt }
+        cpus = { 20 * task.attempt }
         memory = { 180.GB * task.attempt }
         time = { 28.d * task.attempt }
+        clusterOptions = { "--mem-per-cpu=${180.GB * task.attempt} --mail-user=gerrit.botha@uct.ac.za" }
     }
 }
 
