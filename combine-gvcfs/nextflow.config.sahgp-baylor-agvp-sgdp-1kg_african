@@ -1,0 +1,62 @@
+params{
+  project_name = "sbas1"
+  sample_sheet = "/home/gerrit/projects/recalling/combine-gvcfs/sahgp-baylor-agvp-sgdp-1kg_african.samplesheet.tsv"
+  cohort_id =  "sbas1"
+  out_dir = "/spaces/gerrit/projects/adme/combine-gvcfs/sahgp-baylor-agvp-sgdp-1kg_african/nextflow-out"
+
+  // GATK specific settings
+  gatk_base = "/spaces/gerrit/projects/adme/soft/gatk-4.0.8.1"
+  gatk_cg_mem = "4g" // memory reuirement for CombineGVCFs
+  ref_seq = "/spaces/gerrit/projects/adme/dbs/gatk/bundle/2.8/b37/human_g1k_v37_decoy.fasta"
+  dbsnp_sites = "/spaces/gerrit/projects/adme/dbs/gatk/bundle/2.8/b37/dbsnp_138.b37.vcf"
+
+  // Tabix settings
+  tabix_base = "/spaces/gerrit/projects/adme/soft/tabix-0.2.6"
+
+}
+
+executor{
+    jobName = { "$task.tag" }
+}
+
+process{
+    cpus = { 1 * task.attempt }
+    memory = { 4.GB * task.attempt }
+    time = { 96.h * task.attempt }
+
+    withLabel: bigmem{
+        cpus = { 1 * task.attempt }
+        memory = { 180.GB * task.attempt }
+        time = { 28.d * task.attempt }
+    }
+}
+
+profiles {
+    standard {
+        process.executor = 'local'
+    }
+    wits {
+        process.executor = 'pbs'
+        process.queue = 'batch'
+        process.time = 96.h
+        process.errorStrategy = 'retry'
+	process.maxRetries = 5
+	process.maxErrors = 1000
+        process.clusterOptions = '-M gerrit.botha@uct.ac.za -m abe'
+    }
+
+   wits_slurm {
+        process.executor = 'slurm'
+        process.queue = 'batch'
+        process.errorStrategy = 'retry'
+	process.maxRetries = 5
+	process.maxErrors = 1000
+        process.clusterOptions = '--mail-user=gerrit.botha@uct.ac.za'
+    }
+}
+
+trace {
+    enabled = true
+    file = "${params.project_name}.trace.txt"
+}
+
