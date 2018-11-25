@@ -1,13 +1,13 @@
 # Intro
 
-This nextflow pipeline converts the CRAMs to Fastq. A forward and reverse read set will be created.
+This nextflow pipeline converts the CRAMs or BAMs to Fastq. A forward and reverse read set will be created.
 
 
 ## Sample sheet format
 
-Below is the sample sheet format. The sample sheet should be a tab delimmted text file and should be specified in `nextflow.config`.  For the CRAM to Fastq conversion only the SampleID and BAM columns are required
+Below is the sample sheet format. The sample sheet should be a tab delimmted text file and should be specified in `nextflow.config`.  For the CRAM/BAM to Fastq conversion only the SampleID and BAM columns are required
 
-- BAM column should contain the flll path to the CRAM.
+- BAM column should contain the flll path to the CRAM/BAM.
 - All collumns not used in this step (Gender, FastqR1, FastqR2, gVCF) should be filled in with a "." 
 
 

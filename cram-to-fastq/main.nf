@@ -23,7 +23,7 @@ process cram_to_fastq {
 
     script:
     """
-    ${params.samtools_base}/samtools fastq -1 ${sample_id}_R1.fastq.gz -2 ${sample_id}_R2.fastq.gz -0 /dev/null -s /dev/null -N -F 0x900 --reference ${params.ref_seq} ${bam_file}
+    ${params.samtools_base}/samtools collate -O --reference ${params.ref_seq} ${bam_file} tmp.collate | ${params.samtools_base}/samtools fastq -1 ${sample_id}_R1.fastq.gz -2 ${sample_id}_R2.fastq.gz -0 /dev/null -s /dev/null -N -F 0x900 --reference ${params.ref_seq} -
     """
 }
 
