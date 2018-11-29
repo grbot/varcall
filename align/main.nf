@@ -11,8 +11,6 @@ Channel.fromPath( file(params.sample_sheet) )
             return [ sample_id, fastq_r1_file, fastq_r2_file ]
         }.into{samples_1; samples_2; samples_3; samples_4; samples_5}
 
-autosomes = "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22".split(',')
-
 process print_sample_info {
     tag { "${sample_id}" }
     echo true
