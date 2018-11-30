@@ -11,19 +11,36 @@ Channel.fromPath( file(params.sample_sheet) )
         }.set{samples}
 
 
+process collate {
+    tag { "${params.project_name}.${sample_id}.C" }
+    echo true
+    publishDir "${params.out_dir}/${sample_id}", mode: 'symlink', overwrite: false
+    input:
+    set val(sample_id), val(bam_file) from samples
+
+    output:
+    set val(sample_id), file("${sample_id}.collate.bam") into collate
+
+    script:
+    """
+    ${params.samtools_base}/samtools collate --reference ${params.ref_seq} -o ${sample_id}.collate.bam  ${bam_file} tmp.collate  
+    """
+}
+
+
 process cram_to_fastq {
     tag { "${params.project_name}.${sample_id}.ctF" }
     echo true
     publishDir "${params.out_dir}/${sample_id}", mode: 'copy', overwrite: false
     input:
-    set val(sample_id), val(bam_file) from samples
+    set val(sample_id), file(bam_file) from collate
 
     output:
     set val(sample_id), file("${sample_id}_R1.fastq.gz"), file("${sample_id}_R2.fastq.gz") into fastq
 
     script:
     """
-    ${params.samtools_base}/samtools collate -O --reference ${params.ref_seq} ${bam_file} tmp.collate | ${params.samtools_base}/samtools fastq -1 ${sample_id}_R1.fastq.gz -2 ${sample_id}_R2.fastq.gz -0 /dev/null -s /dev/null -N -F 0x900 --reference ${params.ref_seq} -
+    ${params.samtools_base}/samtools fastq -1 ${sample_id}_R1.fastq.gz -2 ${sample_id}_R2.fastq.gz -0 /dev/null -s /dev/null -N -F 0x900 --reference ${params.ref_seq} ${bam_file}
     """
 }
 
