@@ -22,8 +22,6 @@ Channel.from( file(params.gVCF_file) )
         .set{ gVCF_file_cha }
 gVCF_file_cha.into{ gVCF_file_cha;  gVCF_file_cha1 }
 
-
-
 """
 Step 1
 """
@@ -35,17 +33,25 @@ process GenotypeGVCF {
         file(gVCF_file) from gVCF_file_cha1
         each chrm from chromosomes
     output:
-        set chrm, file(vcf_out) into GenotypeGVCF
+        set chrm, file(vcf_out), file(vcf_index_out)  into GenotypeGVCF
     script:
+         call_conf = 30 // set default
+         if ( params.sample_coverage == "high" )
+           call_conf = 30
+         else if ( params.sample_coverage == "low" )
+           call_conf = 10
         base = file(file(gVCF_file.baseName).baseName).baseName
         vcf_out = "${base}_chr${chrm}.vcf.gz"
+        vcf_index_out = "${base}_chr${chrm}.vcf.gz.tbi"
         """
-        tabix ${gVCF_file}
+        ${params.tabix_base}/tabix ${gVCF_file}
         ${params.gatk_base}/gatk \
             GenotypeGVCFs \
             -R ${params.ref_seq} \
             -L ${chrm} \
             -V ${gVCF_file} \
+            -stand-call-conf ${call_conf} \
+            -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
             -O ${vcf_out}
         """
 }
@@ -73,17 +79,25 @@ process GenotypeGVCF_genes {
     input:
         set chrm, file(gVCF_file), file(bed_file) from split_bed_to_chr
     output:
-        set chrm, file(vcf_out) into GenotypeGVCF_genes
+        set chrm, file(vcf_out), file(vcf_index_out) into GenotypeGVCF_genes
     script:
+         call_conf = 30 // set default
+         if ( params.sample_coverage == "high" )
+           call_conf = 30
+         else if ( params.sample_coverage == "low" )
+           call_conf = 10
         base = file(file(gVCF_file.baseName).baseName).baseName
         vcf_out = "${base}_chr${chrm}_genes.vcf.gz"
+        vcf_index_out = "${base}_chr${chrm}_genes.vcf.gz.tbi"
         """
-        tabix ${gVCF_file}
+        ${params.tabix_base}/tabix ${gVCF_file}
         ${params.gatk_base}/gatk \
             GenotypeGVCFs \
             -R ${params.ref_seq} \
             -L ${bed_file} \
             -V ${gVCF_file} \
+            -stand-call-conf ${call_conf} \
+            -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
             -O ${vcf_out}
         """
 }
