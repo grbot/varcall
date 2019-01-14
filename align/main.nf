@@ -11,8 +11,6 @@ Channel.fromPath( file(params.sample_sheet) )
             return [ sample_id, fastq_r1_file, fastq_r2_file ]
         }.into{samples_1; samples_2; samples_3; samples_4; samples_5}
 
-autosomes = "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22".split(',')
-
 process print_sample_info {
     tag { "${sample_id}" }
     echo true
@@ -62,8 +60,7 @@ process run_mark_duplicates {
     set val(sample_id), file(bam_file) from raw_bam
 
     output:
-    set val(sample_id), file("${sample_id}.md.bam")  into md_bam
-    set val(sample_id), file("${sample_id}.md.bai") into md_bam_indexes
+    set val(sample_id), file("${sample_id}.md.bam"), file("${sample_id}.md.bai")  into md_bam
     
     """
     ${params.gatk_base}/gatk --java-options "-Xmx${params.gatk_md_mem}"  \
@@ -78,18 +75,16 @@ process run_mark_duplicates {
     """
 }
 
-md_bam.into{md_bam_1; md_bam_2; md_bam_3}
-
 process run_create_recalibration_table {
     tag { "${params.project_name}.${sample_id}.rCRT" }
     memory { 8.GB * task.attempt }
     publishDir "${params.out_dir}/${sample_id}", mode: 'copy', overwrite: false
 
     input:
-    set val(sample_id), file(bam_file) from md_bam_1
+    set val(sample_id), file(bam_file), file(bam_file_index) from md_bam
 
     output:
-    set val(sample_id), file("${sample_id}.recal.table")  into recal_table
+    set val(sample_id), file("${sample_id}.md.bam"), file("${sample_id}.md.bai"), file("${sample_id}.recal.table")  into recal_table
     
     script:
     """
@@ -111,8 +106,7 @@ process run_recalibrate_bam {
     publishDir "${params.out_dir}/${sample_id}", mode: 'copy', overwrite: false
 
     input:
-    set val(sample_id), file(bam_file) from md_bam_2
-    set val(sample_id), file(recal_table_file) from recal_table
+    set val(sample_id), file(bam_file), file(bam_file_index), file(recal_table_file) from recal_table
 
     output:
     set val(sample_id), file("${sample_id}.md.recal.bam")  into recal_bam
