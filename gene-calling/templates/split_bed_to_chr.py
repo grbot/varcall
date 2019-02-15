@@ -4,25 +4,25 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--inBED", default="${inBED}", help="")
-parser.add_argument("--chrm", default="${chrm}", help="")
+parser.add_argument("--chr", default="${chr}", help="")
 parser.add_argument("--outBED", default="${outBED}", help="")
 args = parser.parse_args()
 
 
-def split_bed(inBED, chrm, outBED):
+def split_bed(inBED, chr, outBED):
     """
     :param inBED:
-    :param chrm:
+    :param chr:
     :param outBED:
     :return:
     """
     output = open(outBED, 'w')
     for line in open(inBED):
         data = line.strip().split()
-        if str(data[0]) == str(chrm):
+        if str(data[0]) == str(chr):
             output.writelines(line)
     output.close()
 
 
 if __name__ == '__main__':
-    split_bed(args.inBED, args.chrm, args.outBED)
+    split_bed(args.inBED, args.chr, args.outBED)

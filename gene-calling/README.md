@@ -1,6 +1,6 @@
 # Intro
 
-The Nextflow script calls on gene and genome level provided a combined gVCF file.
+The Nextflow script calls on gene level provided a combined gVCF file.
 
 Please see `nextflow.conf` for GATK version and references databases used. Path to combined gVCF file is also specified in nextflow config.
 
@@ -16,5 +16,5 @@ nextflow -log nextflow.log run -w /spaces/gerrit/projects/adme/gene-calling/sahg
 
 ## Output
 
-The output directory will contain a called file on gene level for each chromosome (`*_genes.vcf.gz`) and a called file on genome level for each chromosome (`*.vcf.gz`).
+The output directory will contain a called file on gene level for each chromosome (`*_genes.vcf.gz`).
 
