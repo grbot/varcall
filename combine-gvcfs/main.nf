@@ -78,7 +78,7 @@ process run_concat_combine_gvcf {
      publishDir "${params.out_dir}/${params.cohort_id}", mode: 'copy', overwrite: false
 
      input:
-     set file(gvcf) from cohort_calls
+     file(gvcf) from cohort_calls
 
      output:
 	   set val(params.cohort_id), file("${params.cohort_id}.g.vcf.gz") into combine_calls
