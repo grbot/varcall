@@ -5,7 +5,7 @@ params{
   combined_gvcf = "/spaces/gerrit/projects/adme/combine-gvcfs/sahgp-baylor-agvp-sgdp-1kg_african-caroline-awigen/nextflow-out/sbas1ca/sbas1ca.g.vcf.gz"
   combined_gvcf_index = "/spaces/gerrit/projects/adme/combine-gvcfs/sahgp-baylor-agvp-sgdp-1kg_african-caroline-awigen/nextflow-out/sbas1ca/sbas1ca.g.vcf.gz.tbi"
 
-  exclude_samples = "/spaces/gerrit/projects/adme/important-files/exclude-baylor.list"
+  exclude_samples = "/spaces/gerrit/projects/adme/important-files/exclude-all.list"
 
   // GATK specific settings
   gatk_base = "/spaces/gerrit/projects/adme/soft/gatk-4.0.8.1"
