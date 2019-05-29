@@ -32,7 +32,7 @@ cohort_chr_calls.toList().into{ cohort_calls }
 
 process run_concat_combine_gvcf {
      tag { "${params.project_name}.${params.cohort_id}.rCCG" }
-     cpus { 20 }
+     label 'bigmem'
      publishDir "${params.out_dir}/${params.cohort_id}", mode: 'copy', overwrite: false
 
      input:
