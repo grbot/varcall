@@ -1,0 +1,2 @@
+SampleID	Gender	FastqR1	FastqR2	BAM	gVCF
+NA12878	F	.	.	/global5/scratch/gerrit/projects/adme/datasets/NA12878/nextflow-out/NA12878/NA12878.md.recal.bam	.
