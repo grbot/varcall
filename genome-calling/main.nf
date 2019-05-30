@@ -194,8 +194,8 @@ process run_concat_vcf {
      ${params.gatk_base}/gatk --java-options "-Xmx${task.memory.toGiga()}g"  \
      GatherVcfs \
      -I ${params.cohort_id}.vcf.list \
-     -O ${params.cohort_id}.g.vcf.gz # GatherVCF does not index the VCF. The VCF will be indexed in the next tabix operation.
-     ${params.tabix_base}/tabix -p vcf ${params.cohort_id}.vcf.gz 
+     -O ${params.cohort_id}.recal-SNP.recal-INDEL.vcf.gz # GatherVCF does not index the VCF. The VCF will be indexed in the next tabix operation.
+     ${params.tabix_base}/tabix -p vcf ${params.cohort_id}.recal-SNP.recal-INDEL.vcf.gz 
      """
 }
 
