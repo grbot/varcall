@@ -61,6 +61,6 @@ profiles {
 
 trace {
     enabled = true
-    file = "${params.project_name}.trace.txt"
+    file = "${params.project_name}.${params.cohort_id}.trace.txt"
 }
 
