@@ -14,7 +14,7 @@ Channel.fromPath( file(params.sample_sheet) )
 process bam_to_cram {
     tag { "${params.project_name}.${sample_id}.btC" }
     echo true
-    publishDir "${params.out_dir}/${sample_id}", mode: 'copy', overwrite: false
+    publishDir "${params.out_dir}/${sample_id}", mode: 'symlink', overwrite: false
     input:
     set val(sample_id), file(bam_file) from samples
 
@@ -35,7 +35,7 @@ cram_file.into{ cram_file_1; cram_file_2; cram_file_3; cram_file_4 }
 process index_cram {
     tag { "${params.project_name}.${sample_id}.iC" }
     echo true
-    publishDir "${params.out_dir}/${sample_id}", mode: 'copy', overwrite: false
+    publishDir "${params.out_dir}/${sample_id}", mode: 'symlink', overwrite: false
     input:
     set val(sample_id), file(cram_file) from cram_file_1
 
@@ -52,7 +52,7 @@ process index_cram {
 process run_flagstat {
     tag { "${params.project_name}.${sample_id}.rF" }
     echo true
-    publishDir "${params.out_dir}/${sample_id}", mode: 'copy', overwrite: false
+    publishDir "${params.out_dir}/${sample_id}", mode: 'symlink', overwrite: false
     input:
     set val(sample_id), file(cram_file) from cram_file_2
 
@@ -73,7 +73,7 @@ cram_file_3.mix(cram_index,cram_stats).groupTuple().set{cram_all}
 process create_md5sum {
     tag { "${params.project_name}.${sample_id}.cMD5S" }
     echo true
-    publishDir "${params.out_dir}/${sample_id}", mode: 'copy', overwrite: false
+    publishDir "${params.out_dir}/${sample_id}", mode: 'symlink', overwrite: false
     input:
     set val(sample_id), file(cram_file) from cram_all
 

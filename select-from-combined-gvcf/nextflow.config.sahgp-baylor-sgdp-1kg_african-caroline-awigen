@@ -28,8 +28,8 @@ process{
     time = { 96.h * task.attempt }
 
     withLabel: bigmem{
-        cpus = { 20 * task.attempt }
-        memory = { 180.GB * task.attempt }
+        cpus = { 1 * task.attempt }
+        memory = { 20.GB * task.attempt }
         time = { 28.d }
         clusterOptions = { "--mail-user=gerrit.botha@uct.ac.za" }
     }
@@ -61,6 +61,6 @@ profiles {
 
 trace {
     enabled = true
-    file = "${params.project_name}.trace.txt"
+    file = "${params.project_name}.${params.cohort_id}.trace.txt"
 }
 
