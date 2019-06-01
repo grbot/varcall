@@ -5,7 +5,6 @@ chroms = params.chromosomes.split(',')
 Channel.from( file(params.gvcf_file) )
         .set{ gvcf_file_ch }
 
-
 process run_genotype_gvcf_on_genome {
     tag { "${params.project_name}.${params.cohort_id}.${chr}.rGGoG" }
     label "bigmem"
@@ -58,11 +57,12 @@ process run_vqsr_on_snps {
    -an DP \
    -an FS \
    -an SOR \
+   -an MQ \
    -an MQRankSum \
    -an QD \
-   -an MQ \
    -an ReadPosRankSum \
    -mode SNP \
+    --max-gaussians "${params.max_gaussians_snps}" \
    -V ${vcf} \
    -O "${params.cohort_id}.${chr}.vcf.recal-SNP.recal" \
    --tranches-file "${params.cohort_id}.${chr}.vcf.recal-SNP.tranches"
@@ -101,7 +101,7 @@ process run_vqsr_on_indels {
     set val (chr), file(vcf), file(vcf_index) from snps_vqsr_vcf
 
     output:
-    set chr, file(vcf), file(vcf_index), file("${params.cohort_id}.${chr}.recal-SNP.vcf.recal-INDEL.recal"), file("${params.cohort_id}.${chr}.recal-SNP.vcf.recal-INDEL.recal.idx"). file("${params.cohort_id}.${chr}.recal-SNP.vcf.recal-INDEL.tranches") into indel_vqsr_recal
+    set chr, file(vcf), file(vcf_index), file("${params.cohort_id}.${chr}.recal-SNP.vcf.recal-INDEL.recal"), file("${params.cohort_id}.${chr}.recal-SNP.vcf.recal-INDEL.recal.idx"), file("${params.cohort_id}.${chr}.recal-SNP.vcf.recal-INDEL.tranches") into indel_vqsr_recal
 
     script:
     """
@@ -114,11 +114,12 @@ process run_vqsr_on_indels {
    -an DP \
    -an FS \
    -an SOR \
+   -an MQ \
    -an MQRankSum \
    -an QD \
-   -an MQ \
    -an ReadPosRankSum \
    -mode INDEL \
+    --max-gaussians "${params.max_gaussians_indels}" \
    -V ${vcf} \
    -O "${params.cohort_id}.${chr}.recal-SNP.vcf.recal-INDEL.recal" \
    --tranches-file "${params.cohort_id}.${chr}.recal-SNP.vcf.recal-INDEL.tranches"
@@ -156,40 +157,37 @@ process run_concat_vcf {
      tag { "${params.project_name}.${params.cohort_id}.rCV" }
      label "bigmem"
      publishDir "${params.out_dir}/${params.cohort_id}/genome-calling", mode: 'copy', overwrite: false
-     
+ 
      input:
      file(vcf) from concat_ready
 
      output:
-	   set val(params.cohort_id), file("${params.cohort_id}.vcf.gz"), file("${params.cohort_id}.vcf.gz.tbi") into combine_calls
+	   set val("${params.cohort_id}"), file("${params.cohort_id}.recal-SNP.recal-INDEL.vcf.gz"), file("${params.cohort_id}.recal-SNP.recal-INDEL.vcf.gz.tbi") into combine_calls
 
      script:
      """
      echo "${vcf.join('\n')}" | grep "\\.1\\.*recal-SNP.recal-INDEL.vcf.gz" > ${params.cohort_id}.vcf.list
-     echo "${vcf.join('\n')}" | grep "\\.2\\.*recal-SNP.recal-INDEL.vcf.gz" > ${params.cohort_id}.vcf.list
-     echo "${vcf.join('\n')}" | grep "\\.3\\.*recal-SNP.recal-INDEL.vcf.gz" > ${params.cohort_id}.vcf.list
-     echo "${vcf.join('\n')}" | grep "\\.4\\.*recal-SNP.recal-INDEL.vcf.gz" > ${params.cohort_id}.vcf.list
-     echo "${vcf.join('\n')}" | grep "\\.5\\.*recal-SNP.recal-INDEL.vcf.gz" > ${params.cohort_id}.vcf.list
-     echo "${vcf.join('\n')}" | grep "\\.6\\.*recal-SNP.recal-INDEL.vcf.gz" > ${params.cohort_id}.vcf.list
-     echo "${vcf.join('\n')}" | grep "\\.7\\.*recal-SNP.recal-INDEL.vcf.gz" > ${params.cohort_id}.vcf.list
-     echo "${vcf.join('\n')}" | grep "\\.8\\.*recal-SNP.recal-INDEL.vcf.gz" > ${params.cohort_id}.vcf.list
-     echo "${vcf.join('\n')}" | grep "\\.9\\.*recal-SNP.recal-INDEL.vcf.gz" > ${params.cohort_id}.vcf.list
-     echo "${vcf.join('\n')}" | grep "\\.10\\.*recal-SNP.recal-INDEL.vcf.gz" > ${params.cohort_id}.vcf.list
-     echo "${vcf.join('\n')}" | grep "\\.11\\.*recal-SNP.recal-INDEL.vcf.gz" > ${params.cohort_id}.vcf.list
-     echo "${vcf.join('\n')}" | grep "\\.12\\.*recal-SNP.recal-INDEL.vcf.gz" > ${params.cohort_id}.vcf.list
-     echo "${vcf.join('\n')}" | grep "\\.13\\.*recal-SNP.recal-INDEL.vcf.gz" > ${params.cohort_id}.vcf.list
-     echo "${vcf.join('\n')}" | grep "\\.14\\.*recal-SNP.recal-INDEL.vcf.gz" > ${params.cohort_id}.vcf.list
-     echo "${vcf.join('\n')}" | grep "\\.15\\.*recal-SNP.recal-INDEL.vcf.gz" > ${params.cohort_id}.vcf.list
-     echo "${vcf.join('\n')}" | grep "\\.16\\.*recal-SNP.recal-INDEL.vcf.gz" > ${params.cohort_id}.vcf.list
-     echo "${vcf.join('\n')}" | grep "\\.17\\.*recal-SNP.recal-INDEL.vcf.gz" > ${params.cohort_id}.vcf.list
-     echo "${vcf.join('\n')}" | grep "\\.18\\.*recal-SNP.recal-INDEL.vcf.gz" > ${params.cohort_id}.vcf.list
-     echo "${vcf.join('\n')}" | grep "\\.19\\.*recal-SNP.recal-INDEL.vcf.gz" > ${params.cohort_id}.vcf.list
-     echo "${vcf.join('\n')}" | grep "\\.20\\.*recal-SNP.recal-INDEL.vcf.gz" > ${params.cohort_id}.vcf.list
-     echo "${vcf.join('\n')}" | grep "\\.21\\.*recal-SNP.recal-INDEL.vcf.gz" > ${params.cohort_id}.vcf.list
-     echo "${vcf.join('\n')}" | grep "\\.22\\.*recal-SNP.recal-INDEL.vcf.gz" > ${params.cohort_id}.vcf.list
-     echo "${vcf.join('\n')}" | grep "\\.X\\.*recal-SNP.recal-INDEL.vcf.gz" >> ${params.cohort_id}.vcf.list
-     echo "${vcf.join('\n')}" | grep "\\.Y\\.*recal-SNP.recal-INDEL.vcf.gz" >> ${earams.cohort_id}.vcf.list
-     echo "${vcf.join('\n')}" | grep "\\.MT\\.*recal-SNP.recal-INDEL.vcf.gz" >> ${params.cohort_id}.vcf.list
+     echo "${vcf.join('\n')}" | grep "\\.2\\.*recal-SNP.recal-INDEL.vcf.gz" >> ${params.cohort_id}.vcf.list
+     echo "${vcf.join('\n')}" | grep "\\.3\\.*recal-SNP.recal-INDEL.vcf.gz" >> ${params.cohort_id}.vcf.list
+     echo "${vcf.join('\n')}" | grep "\\.4\\.*recal-SNP.recal-INDEL.vcf.gz" >> ${params.cohort_id}.vcf.list
+     echo "${vcf.join('\n')}" | grep "\\.5\\.*recal-SNP.recal-INDEL.vcf.gz" >> ${params.cohort_id}.vcf.list
+     echo "${vcf.join('\n')}" | grep "\\.6\\.*recal-SNP.recal-INDEL.vcf.gz" >> ${params.cohort_id}.vcf.list
+     echo "${vcf.join('\n')}" | grep "\\.7\\.*recal-SNP.recal-INDEL.vcf.gz" >> ${params.cohort_id}.vcf.list
+     echo "${vcf.join('\n')}" | grep "\\.8\\.*recal-SNP.recal-INDEL.vcf.gz" >> ${params.cohort_id}.vcf.list
+     echo "${vcf.join('\n')}" | grep "\\.9\\.*recal-SNP.recal-INDEL.vcf.gz" >> ${params.cohort_id}.vcf.list
+     echo "${vcf.join('\n')}" | grep "\\.10\\.*recal-SNP.recal-INDEL.vcf.gz" >> ${params.cohort_id}.vcf.list
+     echo "${vcf.join('\n')}" | grep "\\.11\\.*recal-SNP.recal-INDEL.vcf.gz" >> ${params.cohort_id}.vcf.list
+     echo "${vcf.join('\n')}" | grep "\\.12\\.*recal-SNP.recal-INDEL.vcf.gz" >> ${params.cohort_id}.vcf.list
+     echo "${vcf.join('\n')}" | grep "\\.13\\.*recal-SNP.recal-INDEL.vcf.gz" >> ${params.cohort_id}.vcf.list
+     echo "${vcf.join('\n')}" | grep "\\.14\\.*recal-SNP.recal-INDEL.vcf.gz" >> ${params.cohort_id}.vcf.list
+     echo "${vcf.join('\n')}" | grep "\\.15\\.*recal-SNP.recal-INDEL.vcf.gz" >> ${params.cohort_id}.vcf.list
+     echo "${vcf.join('\n')}" | grep "\\.16\\.*recal-SNP.recal-INDEL.vcf.gz" >> ${params.cohort_id}.vcf.list
+     echo "${vcf.join('\n')}" | grep "\\.17\\.*recal-SNP.recal-INDEL.vcf.gz" >> ${params.cohort_id}.vcf.list
+     echo "${vcf.join('\n')}" | grep "\\.18\\.*recal-SNP.recal-INDEL.vcf.gz" >> ${params.cohort_id}.vcf.list
+     echo "${vcf.join('\n')}" | grep "\\.19\\.*recal-SNP.recal-INDEL.vcf.gz" >> ${params.cohort_id}.vcf.list
+     echo "${vcf.join('\n')}" | grep "\\.20\\.*recal-SNP.recal-INDEL.vcf.gz" >> ${params.cohort_id}.vcf.list
+     echo "${vcf.join('\n')}" | grep "\\.21\\.*recal-SNP.recal-INDEL.vcf.gz" >> ${params.cohort_id}.vcf.list
+     echo "${vcf.join('\n')}" | grep "\\.22\\.*recal-SNP.recal-INDEL.vcf.gz" >> ${params.cohort_id}.vcf.list
     
      ${params.gatk_base}/gatk --java-options "-Xmx${task.memory.toGiga()}g"  \
      GatherVcfs \
