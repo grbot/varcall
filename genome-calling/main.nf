@@ -14,7 +14,8 @@ process run_genotype_gvcf_on_genome {
     each chr from chroms
 
     output:
-    set chr, file("${params.cohort_id}.${chr}.vcf.gz"), file("${params.cohort_id}.${chr}.vcf.gz.tbi") into gg_vcf
+    set chr, file("${params.cohort_id}.${chr}.vcf.gz"), file("${params.cohort_id}.${chr}.vcf.gz.tbi") into gg_vcf_set
+    file("${params.cohort_id}.${chr}.vcf.gz") into gg_vcf
 
     script:
     call_conf = 30 // set default
@@ -34,22 +35,67 @@ process run_genotype_gvcf_on_genome {
     """
 }
 
+gg_vcf.toList().set{ concat_ready  }
+
+process run_concat_vcf {
+     tag { "${params.project_name}.${params.cohort_id}.rCV" }
+     label "bigmem"
+     publishDir "${params.out_dir}/${params.cohort_id}/genome-calling", mode: 'copy', overwrite: false
+ 
+     input:
+     file(vcf) from concat_ready
+
+     output:
+	   set file("${params.cohort_id}.vcf.gz"), file("${params.cohort_id}.vcf.gz.tbi") into combined_calls
+
+     script:
+     """
+     echo "${vcf.join('\n')}" | grep "\\.1\\.vcf.gz" > ${params.cohort_id}.vcf.list
+     echo "${vcf.join('\n')}" | grep "\\.2\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+     echo "${vcf.join('\n')}" | grep "\\.3\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+     echo "${vcf.join('\n')}" | grep "\\.4\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+     echo "${vcf.join('\n')}" | grep "\\.5\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+     echo "${vcf.join('\n')}" | grep "\\.6\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+     echo "${vcf.join('\n')}" | grep "\\.7\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+     echo "${vcf.join('\n')}" | grep "\\.8\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+     echo "${vcf.join('\n')}" | grep "\\.9\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+     echo "${vcf.join('\n')}" | grep "\\.10\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+     echo "${vcf.join('\n')}" | grep "\\.11\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+     echo "${vcf.join('\n')}" | grep "\\.12\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+     echo "${vcf.join('\n')}" | grep "\\.13\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+     echo "${vcf.join('\n')}" | grep "\\.14\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+     echo "${vcf.join('\n')}" | grep "\\.15\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+     echo "${vcf.join('\n')}" | grep "\\.16\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+     echo "${vcf.join('\n')}" | grep "\\.17\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+     echo "${vcf.join('\n')}" | grep "\\.18\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+     echo "${vcf.join('\n')}" | grep "\\.19\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+     echo "${vcf.join('\n')}" | grep "\\.20\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+     echo "${vcf.join('\n')}" | grep "\\.21\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+     echo "${vcf.join('\n')}" | grep "\\.22\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+    
+     ${params.gatk_base}/gatk --java-options "-Xmx${task.memory.toGiga()}g"  \
+     GatherVcfs \
+     -I ${params.cohort_id}.vcf.list \
+     -O ${params.cohort_id}.vcf.gz # GatherVCF does not index the VCF. The VCF will be indexed in the next tabix operation.
+     ${params.tabix_base}/tabix -p vcf ${params.cohort_id}.vcf.gz 
+     """
+}
+
 process run_vqsr_on_snps {
-    tag { "${params.project_name}.${params.cohort_id}.${chr}.rVoS" }
+    tag { "${params.project_name}.${params.cohort_id}.rVoS" }
     label "bigmem"
     publishDir "${params.out_dir}/${params.cohort_id}/genome-calling", mode: 'copy', overwrite: false
     input:		
-    set val (chr), file(vcf), file(vcf_index) from gg_vcf
+    set file(vcf), file(vcf_index) from combined_calls
 
     output:
-    set chr, file(vcf), file(vcf_index), file("${params.cohort_id}.${chr}.vcf.recal-SNP.recal"), file("${params.cohort_id}.${chr}.vcf.recal-SNP.recal.idx"), file("${params.cohort_id}.${chr}.vcf.recal-SNP.tranches") into snps_vqsr_recal
+    set file(vcf), file(vcf_index), file("${params.cohort_id}.vcf.recal-SNP.recal"), file("${params.cohort_id}.vcf.recal-SNP.recal.idx"), file("${params.cohort_id}.vcf.recal-SNP.tranches") into snps_vqsr_recal
 
     script:
     """
     ${params.gatk_base}/gatk --java-options "-Xmx${task.memory.toGiga()}g" \
     VariantRecalibrator \
    -R ${params.ref_seq} \
-   -L $chr \
    -resource hapmap,known=false,training=true,truth=true,prior=15.0:${params.hapmap} \
    -resource omni,known=false,training=true,truth=true,prior=12.0:${params.omni} \
    -resource 1000G,known=false,training=true,truth=false,prior=10.0:${params.phase1_snps} \
@@ -64,20 +110,20 @@ process run_vqsr_on_snps {
    -mode SNP \
     --max-gaussians "${params.max_gaussians_snps}" \
    -V ${vcf} \
-   -O "${params.cohort_id}.${chr}.vcf.recal-SNP.recal" \
-   --tranches-file "${params.cohort_id}.${chr}.vcf.recal-SNP.tranches"
+   -O "${params.cohort_id}.vcf.recal-SNP.recal" \
+   --tranches-file "${params.cohort_id}.vcf.recal-SNP.tranches"
    """
 }
 
 process run_apply_vqsr_on_snps {
-    tag { "${params.project_name}.${params.cohort_id}.${chr}.rAVoS" }
+    tag { "${params.project_name}.${params.cohort_id}.rAVoS" }
     label "bigmem"
     publishDir "${params.out_dir}/${params.cohort_id}/genome-calling", mode: 'copy', overwrite: false
     input:		
-    set val (chr), file(vcf), file(vcf_index), file(snp_recal), file(snp_recal_index), file(snp_tranches) from snps_vqsr_recal
+    set file(vcf), file(vcf_index), file(snp_recal), file(snp_recal_index), file(snp_tranches) from snps_vqsr_recal
 
     output:
-    set chr, file("${params.cohort_id}.${chr}.recal-SNP.vcf.gz"), file("${params.cohort_id}.${chr}.recal-SNP.vcf.gz.tbi") into snps_vqsr_vcf
+    set file("${params.cohort_id}.recal-SNP.vcf.gz"), file("${params.cohort_id}.recal-SNP.vcf.gz.tbi") into snps_vqsr_vcf
 
     script:
     """
@@ -89,26 +135,25 @@ process run_apply_vqsr_on_snps {
     -mode SNP \
     -ts-filter-level "${params.ts_filter_level_snps}" \
     -V ${vcf} \
-    -O "${params.cohort_id}.${chr}.recal-SNP.vcf.gz"
+    -O "${params.cohort_id}.recal-SNP.vcf.gz"
     """
 }
 
 process run_vqsr_on_indels {
-    tag { "${params.project_name}.${params.cohort_id}.${chr}.rVoI" }
+    tag { "${params.project_name}.${params.cohort_id}.rVoI" }
     label "bigmem"
     publishDir "${params.out_dir}/${params.cohort_id}/genome-calling", mode: 'copy', overwrite: false
     input:
-    set val (chr), file(vcf), file(vcf_index) from snps_vqsr_vcf
+    set file(vcf), file(vcf_index) from snps_vqsr_vcf
 
     output:
-    set chr, file(vcf), file(vcf_index), file("${params.cohort_id}.${chr}.recal-SNP.vcf.recal-INDEL.recal"), file("${params.cohort_id}.${chr}.recal-SNP.vcf.recal-INDEL.recal.idx"), file("${params.cohort_id}.${chr}.recal-SNP.vcf.recal-INDEL.tranches") into indel_vqsr_recal
+    set file(vcf), file(vcf_index), file("${params.cohort_id}.recal-SNP.vcf.recal-INDEL.recal"), file("${params.cohort_id}.recal-SNP.vcf.recal-INDEL.recal.idx"), file("${params.cohort_id}.recal-SNP.vcf.recal-INDEL.tranches") into indel_vqsr_recal
 
     script:
     """
     ${params.gatk_base}/gatk --java-options "-Xmx${task.memory.toGiga()}g" \
     VariantRecalibrator \
    -R ${params.ref_seq} \
-   -L $chr \
    -resource mills,known=false,training=true,truth=true,prior=12.0:${params.golden_indels} \
    -resource dbsnp,known=true,training=false,truth=false,prior=2.0:${params.dbsnp} \
    -an DP \
@@ -121,21 +166,20 @@ process run_vqsr_on_indels {
    -mode INDEL \
     --max-gaussians "${params.max_gaussians_indels}" \
    -V ${vcf} \
-   -O "${params.cohort_id}.${chr}.recal-SNP.vcf.recal-INDEL.recal" \
-   --tranches-file "${params.cohort_id}.${chr}.recal-SNP.vcf.recal-INDEL.tranches"
+   -O "${params.cohort_id}.recal-SNP.vcf.recal-INDEL.recal" \
+   --tranches-file "${params.cohort_id}.recal-SNP.vcf.recal-INDEL.tranches"
    """
 }
 
 process run_apply_vqsr_on_indels {
-    tag { "${params.project_name}.${params.cohort_id}.${chr}.rAVoI" }
+    tag { "${params.project_name}.${params.cohort_id}.rAVoI" }
     label "bigmem"
     publishDir "${params.out_dir}/${params.cohort_id}/genome-calling", mode: 'copy', overwrite: false
     input:		
-    set val (chr), file(vcf), file(vcf_index), file(indel_recal), file(indel_recal_index), file(indel_tranches) from indel_vqsr_recal
+    set file(vcf), file(vcf_index), file(indel_recal), file(indel_recal_index), file(indel_tranches) from indel_vqsr_recal
 
     output:
-    set chr, file("${params.cohort_id}.${chr}.recal-SNP.recal-INDEL.vcf.gz"), file("${params.cohort_id}.${chr}.recal-SNP.recal-INDEL.vcf.gz.tbi") into indel_vqsr_vcf
-    file("${params.cohort_id}.${chr}.recal-SNP.recal-INDEL.vcf.gz") into vcf_concat_ready
+    set file("${params.cohort_id}.recal-SNP.recal-INDEL.vcf.gz"), file("${params.cohort_id}.recal-SNP.recal-INDEL.vcf.gz.tbi") into indel_vqsr_vcf
 
     script:
     """
@@ -147,54 +191,8 @@ process run_apply_vqsr_on_indels {
     -mode INDEL \
     -ts-filter-level "${params.ts_filter_level_indels}" \
     -V ${vcf} \
-    -O "${params.cohort_id}.${chr}.recal-SNP.recal-INDEL.vcf.gz"
+    -O "${params.cohort_id}.recal-SNP.recal-INDEL.vcf.gz"
     """
-}
-
-vcf_concat_ready.toList().set{ concat_ready  }
-
-process run_concat_vcf {
-     tag { "${params.project_name}.${params.cohort_id}.rCV" }
-     label "bigmem"
-     publishDir "${params.out_dir}/${params.cohort_id}/genome-calling", mode: 'copy', overwrite: false
- 
-     input:
-     file(vcf) from concat_ready
-
-     output:
-	   set val("${params.cohort_id}"), file("${params.cohort_id}.recal-SNP.recal-INDEL.vcf.gz"), file("${params.cohort_id}.recal-SNP.recal-INDEL.vcf.gz.tbi") into combine_calls
-
-     script:
-     """
-     echo "${vcf.join('\n')}" | grep "\\.1\\.*recal-SNP.recal-INDEL.vcf.gz" > ${params.cohort_id}.vcf.list
-     echo "${vcf.join('\n')}" | grep "\\.2\\.*recal-SNP.recal-INDEL.vcf.gz" >> ${params.cohort_id}.vcf.list
-     echo "${vcf.join('\n')}" | grep "\\.3\\.*recal-SNP.recal-INDEL.vcf.gz" >> ${params.cohort_id}.vcf.list
-     echo "${vcf.join('\n')}" | grep "\\.4\\.*recal-SNP.recal-INDEL.vcf.gz" >> ${params.cohort_id}.vcf.list
-     echo "${vcf.join('\n')}" | grep "\\.5\\.*recal-SNP.recal-INDEL.vcf.gz" >> ${params.cohort_id}.vcf.list
-     echo "${vcf.join('\n')}" | grep "\\.6\\.*recal-SNP.recal-INDEL.vcf.gz" >> ${params.cohort_id}.vcf.list
-     echo "${vcf.join('\n')}" | grep "\\.7\\.*recal-SNP.recal-INDEL.vcf.gz" >> ${params.cohort_id}.vcf.list
-     echo "${vcf.join('\n')}" | grep "\\.8\\.*recal-SNP.recal-INDEL.vcf.gz" >> ${params.cohort_id}.vcf.list
-     echo "${vcf.join('\n')}" | grep "\\.9\\.*recal-SNP.recal-INDEL.vcf.gz" >> ${params.cohort_id}.vcf.list
-     echo "${vcf.join('\n')}" | grep "\\.10\\.*recal-SNP.recal-INDEL.vcf.gz" >> ${params.cohort_id}.vcf.list
-     echo "${vcf.join('\n')}" | grep "\\.11\\.*recal-SNP.recal-INDEL.vcf.gz" >> ${params.cohort_id}.vcf.list
-     echo "${vcf.join('\n')}" | grep "\\.12\\.*recal-SNP.recal-INDEL.vcf.gz" >> ${params.cohort_id}.vcf.list
-     echo "${vcf.join('\n')}" | grep "\\.13\\.*recal-SNP.recal-INDEL.vcf.gz" >> ${params.cohort_id}.vcf.list
-     echo "${vcf.join('\n')}" | grep "\\.14\\.*recal-SNP.recal-INDEL.vcf.gz" >> ${params.cohort_id}.vcf.list
-     echo "${vcf.join('\n')}" | grep "\\.15\\.*recal-SNP.recal-INDEL.vcf.gz" >> ${params.cohort_id}.vcf.list
-     echo "${vcf.join('\n')}" | grep "\\.16\\.*recal-SNP.recal-INDEL.vcf.gz" >> ${params.cohort_id}.vcf.list
-     echo "${vcf.join('\n')}" | grep "\\.17\\.*recal-SNP.recal-INDEL.vcf.gz" >> ${params.cohort_id}.vcf.list
-     echo "${vcf.join('\n')}" | grep "\\.18\\.*recal-SNP.recal-INDEL.vcf.gz" >> ${params.cohort_id}.vcf.list
-     echo "${vcf.join('\n')}" | grep "\\.19\\.*recal-SNP.recal-INDEL.vcf.gz" >> ${params.cohort_id}.vcf.list
-     echo "${vcf.join('\n')}" | grep "\\.20\\.*recal-SNP.recal-INDEL.vcf.gz" >> ${params.cohort_id}.vcf.list
-     echo "${vcf.join('\n')}" | grep "\\.21\\.*recal-SNP.recal-INDEL.vcf.gz" >> ${params.cohort_id}.vcf.list
-     echo "${vcf.join('\n')}" | grep "\\.22\\.*recal-SNP.recal-INDEL.vcf.gz" >> ${params.cohort_id}.vcf.list
-    
-     ${params.gatk_base}/gatk --java-options "-Xmx${task.memory.toGiga()}g"  \
-     GatherVcfs \
-     -I ${params.cohort_id}.vcf.list \
-     -O ${params.cohort_id}.recal-SNP.recal-INDEL.vcf.gz # GatherVCF does not index the VCF. The VCF will be indexed in the next tabix operation.
-     ${params.tabix_base}/tabix -p vcf ${params.cohort_id}.recal-SNP.recal-INDEL.vcf.gz 
-     """
 }
 
 workflow.onComplete {

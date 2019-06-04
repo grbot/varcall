@@ -17,13 +17,13 @@ params{
     ts_filter_level_snps = 99.5    
     ts_filter_level_indels = 99.0    
 
-    max_gaussians_snps = 8
-    max_gaussians_indels = 8
+    max_gaussians_snps = 4
+    max_gaussians_indels = 4
  
     // Tabix settings
     tabix_base = "/opt/exp_soft/tabix-0.2.6"
 
-    chromosomes = "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,X,Y,MT"
+    chromosomes = "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22"
     gvcf_file = "/global5/scratch/gerrit/projects/adme/datasets/NA12878/nextflow-out/NA12878/NA12878.g.vcf.gz"
 
     max_memory = 512.GB
