@@ -13,11 +13,11 @@ For each dataset
 1) Modify your `nextflow.config` to read the `gvcf_file` and specify the output directory e.g. `out_dir = "/global/scratch/gerrit/projects/adme/datasets/NA12878/nextflow-out"`
 2) Run the workflow
 ```
-nextflow -log nextflow.log run -w /global5/scratch/gerrit/projects/adme/datasets/NA12878-work -c /home/gerrit/code/recalling/genome-calling/nextflow.config.NA12878 /home/gerrit/code/recalling/genome-calling/main.nf -profile cbio -with-report NA12878.report.html -with-trace -with-timeline NA12878.timeline.html -resume
+nextflow -log nextflow.log run -w /global5/scratch/gerrit/projects/adme/datasets/NA12878-work -c /home/gerrit/code/recalling/genome-calling-vqsr-per-chromosome/nextflow.config.NA12878 /home/gerrit/code/recalling/genome-calling-vqsr-per-chromosome/main.nf -profile cbio -with-report NA12878.report.html -with-trace -with-timeline NA12878.timeline.html -resume
 ```
 3) Run the workflow on X, Y and MT
 ```
-nextflow -log nextflow.log run -w /global5/scratch/gerrit/projects/adme/datasets/NA12878-work -c /home/gerrit/code/recalling/genome-calling/nextflow.config.NA12878 /home/gerrit/code/recalling/genome-calling/main.X-Y-MT.nf -profile cbio -with-report NA12878.X-Y-MT.report.html -with-trace -with-timeline NA12878.X-Y-MT.timeline.htm
+nextflow -log nextflow.log run -w /global5/scratch/gerrit/projects/adme/datasets/NA12878-work -c /home/gerrit/code/recalling/genome-calling-vqsr-per-chromosome/nextflow.config.NA12878 /home/gerrit/code/recalling/genome-calling-vqsr-per-chromosome/main.X-Y-MT.nf -profile cbio -with-report NA12878.X-Y-MT.report.html -with-trace -with-timeline NA12878.X-Y-MT.timeline.htm
 ```
 
 ## Output
