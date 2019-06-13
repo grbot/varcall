@@ -57,14 +57,13 @@ process run_flagstat {
     set val(sample_id), file(cram_file) from cram_file_2
 
     output:
-    set val(sample_id), file("${cram_file}.stats") into cram_stats
+    set val(sample_id), file("${cram_file}.flagstat") into cram_stats
 
     script:
     """
-    ${params.samtools_base}/samtools stats  \
-    --reference ${params.ref_seq} \
-    --threads 1 \
-    ${cram_file} > ${cram_file}.stats  \
+    ${params.samtools_base}/samtools flagstat \
+    -@ 1 \
+    ${cram_file} > ${cram_file}.flagstat  \
     """
 }
 
