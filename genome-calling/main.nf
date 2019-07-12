@@ -9,7 +9,7 @@ process run_genotype_gvcf_on_genome {
     tag { "${params.project_name}.${params.cohort_id}.${chr}.rGGoG" }
     label "bigmem"
     publishDir "${params.out_dir}/${params.cohort_id}/genome-calling", mode: 'copy', overwrite: false
-    input:		
+    input:
     val (gvcf_file) from gvcf_file_ch
     each chr from chroms
 
@@ -31,7 +31,7 @@ process run_genotype_gvcf_on_genome {
     -V ${gvcf_file} \
     -stand-call-conf ${call_conf} \
     -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
-    -O "${params.cohort_id}.${chr}.vcf.gz" 
+    -O "${params.cohort_id}.${chr}.vcf.gz"
     """
 }
 
@@ -41,7 +41,7 @@ process run_concat_vcf {
      tag { "${params.project_name}.${params.cohort_id}.rCV" }
      label "bigmem"
      publishDir "${params.out_dir}/${params.cohort_id}/genome-calling", mode: 'copy', overwrite: false
- 
+
      input:
      file(vcf) from concat_ready
 
@@ -72,12 +72,15 @@ process run_concat_vcf {
      echo "${vcf.join('\n')}" | grep "\\.20\\.vcf.gz" >> ${params.cohort_id}.vcf.list
      echo "${vcf.join('\n')}" | grep "\\.21\\.vcf.gz" >> ${params.cohort_id}.vcf.list
      echo "${vcf.join('\n')}" | grep "\\.22\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-    
+     echo "${vcf.join('\n')}" | grep "\\.X\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+     echo "${vcf.join('\n')}" | grep "\\.Y\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+     echo "${vcf.join('\n')}" | grep "\\.MT\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+
      ${params.gatk_base}/gatk --java-options "-Xmx${task.memory.toGiga()}g"  \
      GatherVcfs \
      -I ${params.cohort_id}.vcf.list \
      -O ${params.cohort_id}.vcf.gz # GatherVCF does not index the VCF. The VCF will be indexed in the next tabix operation.
-     ${params.tabix_base}/tabix -p vcf ${params.cohort_id}.vcf.gz 
+     ${params.tabix_base}/tabix -p vcf ${params.cohort_id}.vcf.gz
      """
 }
 
@@ -85,7 +88,7 @@ process run_vqsr_on_snps {
     tag { "${params.project_name}.${params.cohort_id}.rVoS" }
     label "bigmem"
     publishDir "${params.out_dir}/${params.cohort_id}/genome-calling", mode: 'copy', overwrite: false
-    input:		
+    input:
     set file(vcf), file(vcf_index) from combined_calls
 
     output:
@@ -119,7 +122,7 @@ process run_apply_vqsr_on_snps {
     tag { "${params.project_name}.${params.cohort_id}.rAVoS" }
     label "bigmem"
     publishDir "${params.out_dir}/${params.cohort_id}/genome-calling", mode: 'copy', overwrite: false
-    input:		
+    input:
     set file(vcf), file(vcf_index), file(snp_recal), file(snp_recal_index), file(snp_tranches) from snps_vqsr_recal
 
     output:
@@ -175,7 +178,7 @@ process run_apply_vqsr_on_indels {
     tag { "${params.project_name}.${params.cohort_id}.rAVoI" }
     label "bigmem"
     publishDir "${params.out_dir}/${params.cohort_id}/genome-calling", mode: 'copy', overwrite: false
-    input:		
+    input:
     set file(vcf), file(vcf_index), file(indel_recal), file(indel_recal_index), file(indel_tranches) from indel_vqsr_recal
 
     output:
