@@ -1,0 +1,97 @@
+params{
+    project_name = "ADME"
+    cohort_id =  "NA12878"
+    out_dir = "/global5/scratch/gerrit/projects/adme/datasets/NA12878/nextflow-out"
+
+    // GATK specific settings
+    gatk_base = "/global5/scratch/gerrit/projects/adme/soft/gatk-4.0.8.1"
+    ref_seq = "/global5/dbs/gatk/2.8/b37/human_g1k_v37_decoy.fasta"
+    dbsnp = "/global5/dbs/gatk/2.8/b37/dbsnp_138.b37.vcf"
+    hapmap = "/global5/dbs/gatk/2.8/b37/hapmap_3.3.b37.vcf"
+    omni  = "/global5/dbs/gatk/2.8/b37/1000G_omni2.5.b37.vcf"
+    phase1_snps = "/global5/dbs/gatk/2.8/b37/1000G_phase1.snps.high_confidence.b37.vcf"
+    golden_indels = "/global5/dbs/gatk/2.8/b37/Mills_and_1000G_gold_standard.indels.b37.vcf" 
+ 
+    // Tabix settings
+    tabix_base = "/opt/exp_soft/tabix-0.2.6"
+
+    in_files = "/global5/scratch/gerrit/projects/adme/datasets/NA12878/nextflow-out/NA12878/genome-calling/NA12878.recal-SNP.recal-INDEL.vcf.gz*"
+
+    max_memory = 512.GB
+    max_cpus = 64
+    max_time = 720.h
+}
+
+executor{
+    jobName = { "$task.tag" }
+}
+
+process{
+    cpus = { check_max( 1 * task.attempt, 'cpus' ) }
+    memory = { check_max( 2.GB * task.attempt, 'memory' ) }
+    time = { check_max( 2.h * task.attempt, 'time' ) }
+
+    withLabel: "bigmem"{
+        cpus = { check_max( 1 * task.attempt, 'cpus' ) }
+        memory = { check_max( 30.GB * task.attempt, 'memory' ) }
+        time = { check_max( 96.h * task.attempt, 'time' ) }
+    }
+}
+
+profiles {
+    standard {
+        process.executor = 'local'
+    }
+    wits_slurm {
+        process {
+            executor = 'slurm'
+            errorStrategy = 'retry'
+            maxRetries = 5
+            maxErrors = 1000
+        }
+    }
+   cbio {
+        process.executor = 'pbs'
+        process.queue = 'dev'
+        process.time = 96.h
+        process.errorStrategy = 'retry'
+        process.maxRetries = 1
+        process.maxErrors = 1000
+        process.clusterOptions = '-M gerrit.botha@uct.ac.za -m abe'
+    }   
+   
+}
+
+
+// Function to ensure that resource requirements don't go beyond
+// a maximum limit
+def check_max(obj, type) {
+    if(type == 'memory'){
+        try {
+            if(obj.compareTo(params.max_memory as nextflow.util.MemoryUnit) == 1)
+                return params.max_memory as nextflow.util.MemoryUnit
+            else
+                return obj
+        } catch (all) {
+            println "   ### ERROR ###   Max memory '${params.max_memory}' is not valid! Using default value: $obj"
+            return obj
+        }
+    } else if(type == 'time'){
+        try {
+            if(obj.compareTo(params.max_time as nextflow.util.Duration) == 1)
+                return params.max_time as nextflow.util.Duration
+            else
+                return obj
+        } catch (all) {
+            println "   ### ERROR ###   Max time '${params.max_time}' is not valid! Using default value: $obj"
+            return obj
+        }
+    } else if(type == 'cpus'){
+        try {
+            return Math.min( obj, params.max_cpus as int )
+        } catch (all) {
+            println "   ### ERROR ###   Max cpus '${params.max_cpus}' is not valid! Using default value: $obj"
+            return obj
+        }
+    }
+}
