@@ -1,6 +1,5 @@
 #!/usr/bin/env nextflow
 
-
 in_files = params.in_files
 out_dir = file(params.out_dir)
 
@@ -23,15 +22,11 @@ process filter_short_snps_indels {
     script:
     filebase = (file(vcf[0].baseName)).baseName
     """
-    ${params.gatk_base}/gatk --java-options "-Xmx${task.memory.toGiga()}g" \
-    SelectVariants \
-    -R ${params.ref_seq} \
-    -V ${vcf[0]} \
-    --select-type-to-include SNP \
-    --select-type-to-include INDEL \
-    --select-type-to-include MIXED \
-    --exclude-filtered true \
-    -O "${filebase}.filter-pass.vcf.gz"
+    ${params.bcftools_base}/bcftools view \
+    --include "FILTER='PASS'" \
+    -O z \
+    -o "${filebase}.filter-pass.vcf.gz" \
+    ${vcf[0]} 
     """
 }
 
@@ -46,12 +41,11 @@ process filter_other {
     script:
     filebase = (file(vcf[0].baseName)).baseName
     """
-    ${params.gatk_base}/gatk --java-options "-Xmx${task.memory.toGiga()}g" \
-    SelectVariants \
-    -R ${params.ref_seq} \
-    -V ${vcf[0]} \
-    --selectExpressions "FILTER == '.'" \
-    -O "${filebase}.filter-other.vcf.gz"
+    ${params.bcftools_base}/bcftools view \
+    --include "FILTER='.'" \
+    -O z \
+    -o "${filebase}.filter-other.vcf.gz" \
+    ${vcf[0]}
     """
 }
 

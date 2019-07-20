@@ -3,10 +3,8 @@ params{
     cohort_id =  "NA12878"
     out_dir = "/global5/scratch/gerrit/projects/adme/datasets/NA12878/nextflow-out"
 
-    // GATK specific settings
-    gatk_base = "/global5/scratch/gerrit/projects/adme/soft/gatk-4.0.8.1"
-    ref_seq = "/global5/dbs/gatk/2.8/b37/human_g1k_v37_decoy.fasta"
- 
+    bcftools_base = "/opt/exp_soft/bcftools-1.9/"
+    
     in_files = "/global5/scratch/gerrit/projects/adme/datasets/NA12878/nextflow-out/NA12878/genome-calling/NA12878.recal-SNP.recal-INDEL.vcf.gz*"
 
     max_memory = 512.GB
