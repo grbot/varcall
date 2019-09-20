@@ -1,14 +1,14 @@
 # Intro
 
-The Nextflow script runs bwa-mem, Picard markduplicates, GATK BQSR and samtool stat on a list of sample reads.
+The Nextflow script runs bwa-mem, Picard markduplicates, GATK BQSR and samtools flagstat on a list of sample reads.
 
-Please see `nextflow.conf` for bwa, GATK and samtools versions and references databases used.
+Please see `nextflow.conf` for bwa, GATK and samtools Singularity versions and references databases used.
 
 ## Sample sheet format
 
 Below is the sample sheet format. The sample sheet should be a tab delimmted text file and should be specified in `nextflow.config`.  For the alignment run, SampleID, FastqR1 and FastqR2 columns are required.
 
-- FastqR1 and FastqR2 should contain the full path to the sample Fastq reads. 
+- FastqR1 and FastqR2 should contain the full path to the sample Fastq reads.
 - All collumns not used in this step (Gender, BAM, gVCF) should be filled in with a "."
 
 
@@ -20,7 +20,7 @@ Below is the sample sheet format. The sample sheet should be a tab delimmted tex
 ## To run
 
 For each dataset
-1) Create your sample sheet. E.g. caroline.samplesheet.tsv` for the caroline dataset. 
+1) Create your sample sheet. E.g. caroline.samplesheet.tsv` for the caroline dataset.
 2) Modify your `nextflow.config` to read the `caroline.samplesheet.tsv` and specify the output directory e.g. `out_dir = "/spaces/gerrit/projects/adme/datasets/caroline/nextflow-out"`
 3) Run the workflow
 ```
