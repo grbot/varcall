@@ -1,0 +1,63 @@
+params{
+  project_name = "NA12878"
+  sample_sheet = "/home/gerrit/code/recalling/generate-gvcf/NA12878.samplesheet.tsv"
+  sample_coverage = "high"
+  out_dir = "/global5/scratch/gerrit/projects/adme/datasets/NA12878/nextflow-out"
+
+  // GATK specific settings
+  ref_seq = "/cbio/dbs/gatk/hg38/Homo_sapiens_assembly38.fasta"
+  dbsnp_sites = "/cbio/dbs/gatk/hg38/dbsnp_146.hg38.vcf.gz"
+
+}
+
+
+process{
+
+    cache = true
+
+    withLabel: gatk {
+         container = 'docker://broadinstitute/gatk:4.1.3.0'
+    }
+
+    cpus = 1
+    memory = 4.GB
+    time = 96.h
+    errorStrategy = 'retry'
+    maxRetries = 5
+    maxErrors = 1000
+}
+
+executor{
+    jobName = { "$task.tag" }
+    queueSize = 100
+    submitRateLimit = '10 min' // submit one job per minute
+}
+
+profiles {
+    standard {
+        process.executor = 'local'
+    }
+    ilifu {
+        process.executor = 'slurm'
+        process.queue = 'Main'
+    }
+    wits {
+        process.executor = 'slurm'
+        process.queue = 'batch'
+    }
+    cbio {
+         process.executor = 'pbs'
+         process.queue = 'dev'
+    }
+
+}
+
+trace {
+    enabled = true
+    file = "${params.project_name}.trace.txt"
+}
+
+singularity {
+  autoMounts = true
+  enabled = true
+}
