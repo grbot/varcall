@@ -2,7 +2,7 @@
 
 The Nextflow script runs bwa-mem, Picard markduplicates, GATK BQSR and samtools flagstat on a list of sample reads.
 
-Please see `nextflow.conf` for bwa, GATK and samtools Singularity versions and references databases used.
+Please see `nextflow.conf` for bwa, samtools and GATK and Docker/Singularity versions and references databases used.
 
 ## Sample sheet format
 
@@ -16,19 +16,21 @@ Below is the sample sheet format. The sample sheet should be a tab delimmted tex
 | -------- | ------ | ------- | ------- | --- | ---- |
 | A01      | .      | /pathto/A01_R1.fastq.gz       | /pathto/A01_R2.fastq.gz       | .   | . |
 
+## Examples
+
+Attached is `NA12878.samplesheet.tsv` an example sheet and `nextflow.config.NA12878.b37` and `nextflow.config.NA12878.b38` to show configuration settings for different reference genomes.
 
 ## To run
 
 For each dataset
-1) Create your sample sheet. E.g. caroline.samplesheet.tsv` for the caroline dataset.
-2) Modify your `nextflow.config` to read the `caroline.samplesheet.tsv` and specify the output directory e.g. `out_dir = "/spaces/gerrit/projects/adme/datasets/caroline/nextflow-out"`
+1) Create your sample sheet. E.g. `NA12878.samplesheet.tsv`.
+2) Modify your `nextflow.config` to read the `NA12878.samplesheet.tsv` and specify the output directory e.g. `out_dir = "/spaces/gerrit/projects/1kg/datasets/NA12878/nextflow-out"`
 3) Run the workflow
 ```
-nextflow -log nextflow.log run -w /spaces/gerrit/projects/adme/datasets/caroline/nextflow-workdir -c /home/gerrit/projects/recalling/align/nextflow.config.caroline /home/gerrit/projects/recalling/align/main.nf -with-report caroline.report.html -with-trace -with-timeline caroline.timeline.html -profile wits_slurm -resume
+nextflow -log nextflow.log run -w /spaces/gerrit/projects/1kg/datasets/NA12878/nextflow-workdir -c /home/gerrit/projects/varcall/align/nextflow.config.NA12878.b37 /home/gerrit/projects/varcall/align/main.nf -with-report NA12878.report.html -with-trace -with-timeline NA12878.timeline.html -profile wits_slurm -resume
 ```
 
 ## Output
-
 
 The output directory will contain per sample directories. Each sample directory will contain
 

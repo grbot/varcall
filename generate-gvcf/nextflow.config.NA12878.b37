@@ -8,6 +8,8 @@ params{
   ref_seq = "/cbio/dbs/gatk/hg38/Homo_sapiens_assembly38.fasta"
   dbsnp_sites = "/cbio/dbs/gatk/hg38/dbsnp_146.hg38.vcf.gz"
 
+  build = "b37"
+
 }
 
 
