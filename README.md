@@ -17,7 +17,6 @@ Each folder contains part of the pipeline or separate scripts to prepare the dat
 * **bam-to-cram** - Need to provide a sample sheet with paths to the BAMs. BAMs are converted to CRAM (v3), indexed, stats are calculated and md5sums are generated.
 * **cram-to-fastq** - Need to provide a sample sheet with paths to the CRAMs. CRAMs are converted to Fastq (forward and reverse pair).`
 * **index-bams** - Need to provide a sample sheet with paths to the BAMs. BAMs are indexed.`
-* **select-from-combined-gvcf** - Need to provide the path to the combined GVCF and list of sample ids to be removed. Sample ids are removed from the combined gVCF and a new combined gVCF are generated.`
 
 ## Note
 * The main pipeline can be followed for a single sample or joint calling sample. For a single sample the `combine-gvcf` can be skipped and the `gene-calling` and `genome-calling` configs can point to single sample `.g.vcf`.
