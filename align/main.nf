@@ -11,6 +11,12 @@ Channel.fromPath( file(params.sample_sheet) )
             return [ sample_id, fastq_r1_file, fastq_r2_file ]
         }.into{samples_1; samples_2; samples_3; samples_4; samples_5}
 
+ref_seq = Channel.fromPath(params.ref_seq).toList()
+known_indels_1 = Channel.fromPath(params.known_indels_1).toList()
+known_indels_2 = Channel.fromPath(params.known_indels_2).toList()
+dbsnp = Channel.fromPath(params.dbsnp).toList()
+gatk_tmp_dir = Channel.fromPath(params.gatk_tmp_dir).toList()
+
 process print_sample_info {
     tag { "${sample_id}" }
     echo true
@@ -31,6 +37,7 @@ process run_bwa {
 
     input:
     set val(sample_id), val(fastq_r1_file), val(fastq_r2_file) from samples_2
+    file (ref) from ref_seq
 
     output:
     set val(sample_id), file("${sample_id}.bam")  into raw_bam
@@ -43,7 +50,7 @@ process run_bwa {
     -R \"${readgroup_info}\" \
     -t ${nr_threads}  \
     -M \
-    ${params.ref_seq} \
+    ${ref} \
     ${fastq_r1_file} \
     ${fastq_r2_file} | \
     samtools sort \
@@ -61,6 +68,7 @@ process run_mark_duplicates {
 
     input:
     set val(sample_id), file(bam_file) from raw_bam
+    file (tmp_dir) from gatk_tmp_dir
 
     output:
     set val(sample_id), file("${sample_id}.md.bam"), file("${sample_id}.md.bai")  into md_bam
@@ -73,7 +81,7 @@ process run_mark_duplicates {
     --MAX_RECORDS_IN_RAM 5000 \
     --INPUT ${bam_file} \
     --METRICS_FILE ${bam_file}.metrics \
-    --TMP_DIR ${params.gatk_tmp_dir} \
+    --TMP_DIR ${tmp_dir} \
     --ASSUME_SORT_ORDER coordinate \
     --CREATE_INDEX true \
     --OUTPUT ${sample_id}.md.bam
@@ -88,6 +96,10 @@ process run_create_recalibration_table {
 
     input:
     set val(sample_id), file(bam_file), file(bam_file_index) from md_bam
+    file (dbsnp_file) from dbsnp
+    file (known_indels_1_file) from known_indels_1
+    file (known_indels_2_file) from known_indels_2
+    file (tmp_dir) from gatk_tmp_dir
 
     output:
     set val(sample_id), file("${sample_id}.md.bam"), file("${sample_id}.md.bai"), file("${sample_id}.recal.table")  into recal_table
@@ -99,11 +111,11 @@ process run_create_recalibration_table {
     BaseRecalibrator \
     --input ${bam_file} \
     --output ${sample_id}.recal.table \
-    --tmp-dir ${params.gatk_tmp_dir} \
+    --tmp-dir ${tmp_dir} \
     -R ${params.ref_seq} \
-    --known-sites ${params.dbsnp} \
-    --known-sites ${params.known_indels_1} \
-    --known-sites ${params.known_indels_2}
+    --known-sites ${dbsnp_file} \
+    --known-sites ${known_indels_1_file} \
+    --known-sites ${known_indels_2_file}
     """
 }
 
@@ -115,6 +127,7 @@ process run_recalibrate_bam {
 
     input:
     set val(sample_id), file(bam_file), file(bam_file_index), file(recal_table_file) from recal_table
+    file (tmp_dir) from gatk_tmp_dir
 
     output:
     set val(sample_id), file("${sample_id}.md.recal.bam")  into recal_bam
@@ -127,7 +140,7 @@ process run_recalibrate_bam {
      ApplyBQSR \
     --input ${bam_file} \
     --output ${sample_id}.md.recal.bam \
-    --tmp-dir ${params.gatk_tmp_dir} \
+    --tmp-dir ${tmp_dir} \
     -R ${params.ref_seq} \
     --create-output-bam-index true \
     --bqsr-recal-file ${recal_table_file}
