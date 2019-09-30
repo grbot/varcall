@@ -1,7 +1,6 @@
 params{
   project_name = "NA12878"
   sample_sheet = "/home/gerrit/code/recalling/align/NA12878.samplesheet.tsv"
-  sample_coverage = "high"
   out_dir = "/global5/scratch/gerrit/projects/adme/datasets/NA12878/nextflow-out"
 
   // bwa
@@ -22,7 +21,7 @@ params{
 executor{
     jobName = { "$task.tag" }
     queueSize = 100
-    submitRateLimit = '10 min' // submit one job per minute
+    submitRateLimit = '10 min' // submit 10 jobs per minute
 }
 
 process {
