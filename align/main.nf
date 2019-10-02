@@ -12,9 +12,18 @@ Channel.fromPath( file(params.sample_sheet) )
         }.into{samples_1; samples_2; samples_3; samples_4; samples_5}
 
 ref_seq = Channel.fromPath(params.ref_seq).toList()
+ref_seq_index = Channel.fromPath(params.ref_seq_index).toList()
+ref_seq_amb = Channel.fromPath(params.ref_seq_amb).toList()
+ref_seq_ann = Channel.fromPath(params.ref_seq_ann).toList()
+ref_seq_bwt = Channel.fromPath(params.ref_seq_bwt).toList()
+ref_seq_pac = Channel.fromPath(params.ref_seq_pac).toList()
+ref_seq_sa = Channel.fromPath(params.ref_seq_sa).toList()
 known_indels_1 = Channel.fromPath(params.known_indels_1).toList()
+known_indels_1_index = Channel.fromPath(params.known_indels_1_index).toList()
 known_indels_2 = Channel.fromPath(params.known_indels_2).toList()
+known_indels_2_index = Channel.fromPath(params.known_indels_2_index).toList()
 dbsnp = Channel.fromPath(params.dbsnp).toList()
+dbsnp_index = Channel.fromPath(params.dbsnp_index).toList()
 gatk_tmp_dir = Channel.fromPath(params.gatk_tmp_dir).toList()
 
 process print_sample_info {
@@ -32,12 +41,18 @@ process run_bwa {
     tag { "${params.project_name}.${sample_id}.rBwa" }
     memory { 64.GB * task.attempt }
     cpus { "${params.bwa_threads}" }
-    publishDir "${params.out_dir}/${sample_id}", mode: 'copy', overwrite: false
+    publishDir "${params.out_dir}/${sample_id}", mode: 'symlink', overwrite: false
     label 'bwa_samtools'
 
     input:
-    set val(sample_id), val(fastq_r1_file), val(fastq_r2_file) from samples_2
+    set val(sample_id), file(fastq_r1_file), file(fastq_r2_file) from samples_2
     file (ref) from ref_seq
+    file (ref_index) from ref_seq_index
+    file (ref_amb) from ref_seq_amb
+    file (ref_ann) from ref_seq_ann
+    file (ref_bwt) from ref_seq_bwt
+    file (ref_pac) from ref_seq_pac
+    file (ref_sa) from ref_seq_sa
 
     output:
     set val(sample_id), file("${sample_id}.bam")  into raw_bam
@@ -63,7 +78,7 @@ process run_bwa {
 process run_mark_duplicates {
     tag { "${params.project_name}.${sample_id}.rMD" }
     memory { 16.GB * task.attempt }
-    publishDir "${params.out_dir}/${sample_id}", mode: 'copy', overwrite: false
+    publishDir "${params.out_dir}/${sample_id}", mode: 'symlink', overwrite: false
     label 'gatk'
 
     input:
@@ -91,14 +106,17 @@ process run_mark_duplicates {
 process run_create_recalibration_table {
     tag { "${params.project_name}.${sample_id}.rCRT" }
     memory { 16.GB * task.attempt }
-    publishDir "${params.out_dir}/${sample_id}", mode: 'copy', overwrite: false
+    publishDir "${params.out_dir}/${sample_id}", mode: 'symlink', overwrite: false
     label 'gatk'
 
     input:
     set val(sample_id), file(bam_file), file(bam_file_index) from md_bam
     file (dbsnp_file) from dbsnp
+    file (dbsnp_index_file) from dbsnp_index
     file (known_indels_1_file) from known_indels_1
+    file (known_indels_1_index_file) from known_indels_1_index
     file (known_indels_2_file) from known_indels_2
+    file (known_indels_2_index_file) from known_indels_2_index
     file (tmp_dir) from gatk_tmp_dir
 
     output:
@@ -151,7 +169,7 @@ process run_samtools_flagstat {
     tag { "${params.project_name}.${sample_id}.rSF" }
     memory { 4.GB * task.attempt }
     cpus { "${params.bwa_threads}" }
-    publishDir "${params.out_dir}/${sample_id}", mode: 'copy', overwrite: false
+    publishDir "${params.out_dir}/${sample_id}", mode: 'move', overwrite: false
     label 'bwa_samtools'
 
     input:
