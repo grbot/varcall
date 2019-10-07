@@ -7,7 +7,6 @@ params{
   bwa_threads = 32
 
   // GATK specific settings
-  gatk_tmp_dir = "/cbio/users/gerrit/scratch/tmp"
   ref_seq = "/cbio/dbs/gatk/hg38/Homo_sapiens_assembly38.fasta"
   known_indels_1 = "/cbio/dbs/gatk/hg38/Homo_sapiens_assembly38.known_indels.vcf.gz"
   known_indels_2 = "/cbio/dbs/gatk/hg38/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz"
