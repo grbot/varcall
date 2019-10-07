@@ -24,7 +24,6 @@ known_indels_2 = Channel.fromPath(params.known_indels_2).toList()
 known_indels_2_index = Channel.fromPath(params.known_indels_2_index).toList()
 dbsnp = Channel.fromPath(params.dbsnp).toList()
 dbsnp_index = Channel.fromPath(params.dbsnp_index).toList()
-gatk_tmp_dir = Channel.fromPath(params.gatk_tmp_dir).toList()
 
 process print_sample_info {
     tag { "${sample_id}" }
@@ -83,7 +82,6 @@ process run_mark_duplicates {
 
     input:
     set val(sample_id), file(bam_file) from raw_bam
-    file (tmp_dir) from gatk_tmp_dir
 
     output:
     set val(sample_id), file("${sample_id}.md.bam"), file("${sample_id}.md.bai")  into md_bam
@@ -96,7 +94,7 @@ process run_mark_duplicates {
     --MAX_RECORDS_IN_RAM 5000 \
     --INPUT ${bam_file} \
     --METRICS_FILE ${bam_file}.metrics \
-    --TMP_DIR ${tmp_dir} \
+    --TMP_DIR . \
     --ASSUME_SORT_ORDER coordinate \
     --CREATE_INDEX true \
     --OUTPUT ${sample_id}.md.bam
@@ -117,7 +115,6 @@ process run_create_recalibration_table {
     file (known_indels_1_index_file) from known_indels_1_index
     file (known_indels_2_file) from known_indels_2
     file (known_indels_2_index_file) from known_indels_2_index
-    file (tmp_dir) from gatk_tmp_dir
 
     output:
     set val(sample_id), file("${sample_id}.md.bam"), file("${sample_id}.md.bai"), file("${sample_id}.recal.table")  into recal_table
@@ -129,7 +126,7 @@ process run_create_recalibration_table {
     BaseRecalibrator \
     --input ${bam_file} \
     --output ${sample_id}.recal.table \
-    --tmp-dir ${tmp_dir} \
+    --tmp-dir . \
     -R ${params.ref_seq} \
     --known-sites ${dbsnp_file} \
     --known-sites ${known_indels_1_file} \
@@ -145,7 +142,6 @@ process run_recalibrate_bam {
 
     input:
     set val(sample_id), file(bam_file), file(bam_file_index), file(recal_table_file) from recal_table
-    file (tmp_dir) from gatk_tmp_dir
 
     output:
     set val(sample_id), file("${sample_id}.md.recal.bam")  into recal_bam
@@ -158,7 +154,7 @@ process run_recalibrate_bam {
      ApplyBQSR \
     --input ${bam_file} \
     --output ${sample_id}.md.recal.bam \
-    --tmp-dir ${tmp_dir} \
+    --tmp-dir . \
     -R ${params.ref_seq} \
     --create-output-bam-index true \
     --bqsr-recal-file ${recal_table_file}
