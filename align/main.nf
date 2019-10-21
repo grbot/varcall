@@ -25,6 +25,7 @@ known_indels_2_index = Channel.fromPath(params.known_indels_2_index).toList()
 dbsnp = Channel.fromPath(params.dbsnp).toList()
 dbsnp_index = Channel.fromPath(params.dbsnp_index).toList()
 
+/*
 process print_sample_info {
     tag { "${sample_id}" }
     echo true
@@ -33,6 +34,39 @@ process print_sample_info {
     script:
     """
     printf "[sample_info] sample: ${sample_id}\tFastqR1: ${fastq_r1_file}\tFastqR2: ${fastq_r2_file}\n"
+    """
+}
+*/
+
+process log_tool_version_samtools_bwa {
+    tag { "${params.project_name}.ltV" }
+    echo true
+    publishDir "${params.out_dir}/", mode: 'copy', overwrite: false
+    label 'bwa_samtools'
+
+    output:
+    file("tool.samtools.bwa.version") into tool_version_samtools_bwa
+
+    script:
+    """
+    samtools --version > tool.samtools.bwa.version
+    bwa 2>&1 | head -n 5 >> tool.samtools.bwa.version
+    """
+}
+
+process log_tool_version_gatk {
+    tag { "${params.project_name}.ltVG" }
+    echo true
+    publishDir "${params.out_dir}/", mode: 'copy', overwrite: false
+    label 'gatk'
+
+    output:
+    file("tool.gatk.version") into tool_version_gatk
+
+    script:
+    mem = task.memory.toGiga() - 3
+    """
+    gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms500m -Xmx${mem}g" --version > tool.gatk.version 2>&1
     """
 }
 
@@ -63,7 +97,8 @@ process run_bwa {
     bwa mem \
     -R \"${readgroup_info}\" \
     -t ${nr_threads}  \
-    -M \
+    -K 100000000 \
+    -Y \
     ${ref} \
     ${fastq_r1_file} \
     ${fastq_r2_file} | \
@@ -137,7 +172,7 @@ process run_create_recalibration_table {
 process run_recalibrate_bam {
     tag { "${params.project_name}.${sample_id}.rRB" }
     memory { 16.GB * task.attempt }
-    publishDir "${params.out_dir}/${sample_id}", mode: 'copy', overwrite: false
+    publishDir "${params.out_dir}/${sample_id}", mode: 'symlink', overwrite: false
     label 'gatk'
 
     input:
@@ -161,15 +196,17 @@ process run_recalibrate_bam {
     """
 }
 
-process run_samtools_flagstat {
-    tag { "${params.project_name}.${sample_id}.rSF" }
+recal_bam.into{ recal_bam_1; recal_bam_2 }
+
+process run_bam_flagstat {
+    tag { "${params.project_name}.${sample_id}.rBF" }
     memory { 4.GB * task.attempt }
     cpus { "${params.bwa_threads}" }
     publishDir "${params.out_dir}/${sample_id}", mode: 'move', overwrite: false
     label 'bwa_samtools'
 
     input:
-    set val(sample_id), file(bam_file) from recal_bam
+    set val(sample_id), file(bam_file) from recal_bam_1
 
     output:
     set val(sample_id), file("${sample_id}.md.recal.flagstat")  into recal_stats
@@ -178,6 +215,85 @@ process run_samtools_flagstat {
     samtools flagstat  \
     --threads ${params.bwa_threads} \
     ${bam_file} > ${sample_id}.md.recal.flagstat  \
+    """
+}
+
+process bam_to_cram {
+    tag { "${params.project_name}.${sample_id}.btC" }
+    echo true
+    publishDir "${params.out_dir}/${sample_id}", mode: 'copy', overwrite: false
+    label 'bwa_samtools'
+    input:
+    set val(sample_id), file(bam_file) from recal_bam_2
+    file (ref) from ref_seq
+
+    output:
+    set val(sample_id), file("${bam_file.baseName}.cram") into cram_file
+
+    script:
+    """
+    samtools view \
+    --reference ${ref} \
+    --output-fmt cram,version=3.0 \
+    -o ${bam_file.baseName}.cram  ${bam_file}
+    """
+}
+
+cram_file.into{ cram_file_1; cram_file_2; cram_file_3; cram_file_4 }
+
+process index_cram {
+    tag { "${params.project_name}.${sample_id}.iC" }
+    echo true
+    publishDir "${params.out_dir}/${sample_id}", mode: 'copy', overwrite: false
+    label 'bwa_samtools'
+    input:
+    set val(sample_id), file(cram_file) from cram_file_1
+
+    output:
+    set val(sample_id), file("${cram_file}.crai") into cram_index
+
+    script:
+    """
+    samtools index  \
+    ${cram_file} ${cram_file}.crai
+    """
+}
+
+process run_cram_flagstat {
+    tag { "${params.project_name}.${sample_id}.rCF" }
+    echo true
+    publishDir "${params.out_dir}/${sample_id}", mode: 'move', overwrite: false
+    label 'bwa_samtools'
+    input:
+    set val(sample_id), file(cram_file) from cram_file_2
+
+    output:
+    set val(sample_id), file("${cram_file}.flagstat") into cram_stats
+
+    script:
+    """
+    samtools flagstat \
+    -@ 1 \
+    ${cram_file} > ${cram_file}.flagstat  \
+    """
+}
+
+cram_file_3.mix(cram_index,cram_stats).groupTuple().set{cram_all}
+
+process create_cram_md5sum {
+    tag { "${params.project_name}.${sample_id}.cCMD5" }
+    echo true
+    publishDir "${params.out_dir}/${sample_id}", mode: 'move', overwrite: false
+    input:
+    set val(sample_id), file(cram_file) from cram_all
+
+    output:
+    set val(sample_id), file(cram_file), file("${cram_file[0]}.md5"), file("${cram_file[1]}.md5") into cram_all_md5sum
+
+    script:
+    """
+    md5sum ${cram_file[0]} > ${cram_file[0]}.md5
+    md5sum ${cram_file[1]} > ${cram_file[1]}.md5
     """
 }
 

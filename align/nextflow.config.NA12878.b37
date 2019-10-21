@@ -1,7 +1,7 @@
 params{
   project_name = "NA12878"
   sample_sheet = "/users/gerrit/projects/refimpute/varcall/align/NA12878.samplesheet.tsv"
-  out_dir = "/cbio/users/gerrit/scratch/nextflow-out/NA12878"
+  out_dir = "/cbio/users/gerrit/scratch/nextflow-out/NA12878/b37"
 
   // bwa
   bwa_threads = 32
@@ -24,7 +24,7 @@ executor{
 }
 
 process {
-    cache = true 
+    cache = true
 
     withLabel: bwa_samtools {
          container = 'docker://quay.io/grbot/bwa-samtools'
@@ -38,7 +38,7 @@ process {
     memory = 4.GB
     time = 12.h
     errorStrategy = 'retry'
-    maxRetries = 5
+    maxRetries = 1
     maxErrors = 1000
 
 }
