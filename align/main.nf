@@ -196,35 +196,13 @@ process run_recalibrate_bam {
     """
 }
 
-recal_bam.into{ recal_bam_1; recal_bam_2 }
-
-process run_bam_flagstat {
-    tag { "${params.project_name}.${sample_id}.rBF" }
-    memory { 4.GB * task.attempt }
-    cpus { "${params.bwa_threads}" }
-    publishDir "${params.out_dir}/${sample_id}", mode: 'move', overwrite: false
-    label 'bwa_samtools'
-
-    input:
-    set val(sample_id), file(bam_file) from recal_bam_1
-
-    output:
-    set val(sample_id), file("${sample_id}.md.recal.flagstat")  into recal_stats
-
-    """
-    samtools flagstat  \
-    --threads ${params.bwa_threads} \
-    ${bam_file} > ${sample_id}.md.recal.flagstat  \
-    """
-}
-
 process bam_to_cram {
     tag { "${params.project_name}.${sample_id}.btC" }
-    echo true
+    memory { 4.GB * task.attempt }
     publishDir "${params.out_dir}/${sample_id}", mode: 'copy', overwrite: false
     label 'bwa_samtools'
     input:
-    set val(sample_id), file(bam_file) from recal_bam_2
+    set val(sample_id), file(bam_file) from recal_bam
     file (ref) from ref_seq
 
     output:
@@ -239,11 +217,11 @@ process bam_to_cram {
     """
 }
 
-cram_file.into{ cram_file_1; cram_file_2; cram_file_3; cram_file_4 }
+cram_file.into{ cram_file_1; cram_file_2; cram_file_3}
 
 process index_cram {
     tag { "${params.project_name}.${sample_id}.iC" }
-    echo true
+    memory { 4.GB * task.attempt }
     publishDir "${params.out_dir}/${sample_id}", mode: 'copy', overwrite: false
     label 'bwa_samtools'
     input:
@@ -261,7 +239,8 @@ process index_cram {
 
 process run_cram_flagstat {
     tag { "${params.project_name}.${sample_id}.rCF" }
-    echo true
+    memory { 4.GB * task.attempt }
+    cpus { "${params.bwa_threads}" }
     publishDir "${params.out_dir}/${sample_id}", mode: 'move', overwrite: false
     label 'bwa_samtools'
     input:
@@ -273,7 +252,7 @@ process run_cram_flagstat {
     script:
     """
     samtools flagstat \
-    -@ 1 \
+    --threads ${params.bwa_threads} \
     ${cram_file} > ${cram_file}.flagstat  \
     """
 }
@@ -282,7 +261,7 @@ cram_file_3.mix(cram_index,cram_stats).groupTuple().set{cram_all}
 
 process create_cram_md5sum {
     tag { "${params.project_name}.${sample_id}.cCMD5" }
-    echo true
+    memory { 4.GB * task.attempt }
     publishDir "${params.out_dir}/${sample_id}", mode: 'move', overwrite: false
     input:
     set val(sample_id), file(cram_file) from cram_all
