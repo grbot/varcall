@@ -19,7 +19,7 @@ Each folder contains part of the pipeline or separate scripts to prepare the dat
 * **index-bams** - Need to provide a sample sheet with paths to the BAMs. BAMs are indexed.`
 
 ## Note
-* The main pipeline can be followed for a single sample or joint calling sample. For a single sample the `combine-gvcf` can be skipped and the `gene-calling` and `genome-calling` configs can point to single sample `.g.vcf`.
+* The main pipeline can be followed for a single sample or joint calling sample. For a single sample the `combine-gvcf` can be skipped and the `genome-calling` configs can point to single sample `.g.vcf`.
 
 ## Example
 To get test data that van be used from the alignment to calling and VQSR phase download the GiaB dataset here
@@ -27,8 +27,3 @@ To get test data that van be used from the alignment to calling and VQSR phase d
 wget -O NA12878_R1.fastq.gz ftp://ftp-trace.ncbi.nih.gov/giab/ftp/data/NA12878/Garvan_NA12878_HG001_HiSeq_Exome/NIST7035_TAAGGCGA_L001_R1_001.fastq.gz
 wget -O NA12878_R2.fastq.gz ftp://ftp-trace.ncbi.nih.gov/giab/ftp/data/NA12878/Garvan_NA12878_HG001_HiSeq_Exome/NIST7035_TAAGGCGA_L001_R2_001.fastq.gz
 ```
-
-## To do
-1. Pull all software as Docker containers (tabix, samtools, GATK). **Busy with this**
-1. Currently setup for `b37`. Setup a swith in nextflow to allow for processing against build `b38`. This would required switching between chromosome names and reference databases. **Busy with this**
-1. All output alignments in the `align` step should be in CRAM. **Need to implement**
