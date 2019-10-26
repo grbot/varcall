@@ -13,6 +13,7 @@ Channel.fromPath( file(params.sample_sheet) )
 
 ref_seq = Channel.fromPath(params.ref_seq).toList()
 ref_seq_index = Channel.fromPath(params.ref_seq_index).toList()
+ref_seq_dict = Channel.fromPath(params.ref_seq_dict).toList()
 ref_seq_amb = Channel.fromPath(params.ref_seq_amb).toList()
 ref_seq_ann = Channel.fromPath(params.ref_seq_ann).toList()
 ref_seq_bwt = Channel.fromPath(params.ref_seq_bwt).toList()
@@ -144,6 +145,9 @@ process run_create_recalibration_table {
 
     input:
     set val(sample_id), file(bam_file), file(bam_file_index) from md_bam
+    file (ref) from ref_seq
+    file (ref_index) from ref_seq_index
+    file (ref_dict) from ref_seq_dict
     file (dbsnp_file) from dbsnp
     file (dbsnp_index_file) from dbsnp_index
     file (known_indels_1_file) from known_indels_1
@@ -162,7 +166,7 @@ process run_create_recalibration_table {
     --input ${bam_file} \
     --output ${sample_id}.recal.table \
     --tmp-dir . \
-    -R ${params.ref_seq} \
+    -R ${ref} \
     --known-sites ${dbsnp_file} \
     --known-sites ${known_indels_1_file} \
     --known-sites ${known_indels_2_file}
@@ -177,6 +181,9 @@ process run_recalibrate_bam {
 
     input:
     set val(sample_id), file(bam_file), file(bam_file_index), file(recal_table_file) from recal_table
+    file (ref) from ref_seq
+    file (ref_index) from ref_seq_index
+    file (ref_dict) from ref_seq_dict
 
     output:
     set val(sample_id), file("${sample_id}.md.recal.bam")  into recal_bam
@@ -190,7 +197,7 @@ process run_recalibrate_bam {
     --input ${bam_file} \
     --output ${sample_id}.md.recal.bam \
     --tmp-dir . \
-    -R ${params.ref_seq} \
+    -R ${ref} \
     --create-output-bam-index true \
     --bqsr-recal-file ${recal_table_file}
     """
@@ -241,7 +248,7 @@ process run_cram_flagstat {
     tag { "${params.project_name}.${sample_id}.rCF" }
     memory { 4.GB * task.attempt }
     cpus { "${params.bwa_threads}" }
-    publishDir "${params.out_dir}/${sample_id}", mode: 'move', overwrite: false
+    publishDir "${params.out_dir}/${sample_id}", mode: 'copy', overwrite: false
     label 'bwa_samtools'
     input:
     set val(sample_id), file(cram_file) from cram_file_2
