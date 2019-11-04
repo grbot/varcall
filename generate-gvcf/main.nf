@@ -13,13 +13,22 @@ Channel.fromPath( file(params.sample_sheet) )
 
 if (params.build == "b37") {
   autosomes = "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22".split(',')
-  y = "X"
-  x = "Y"
+  x = "X"
+  y = "Y"
+  x_par1 = "10001-2781479"
+  x_par2 = "155701383-156030895"
+  y_par1 = "10001-2781479"
+  y_par2 = "56887903-57217415"
   mt = "MT"
 } else if (params.build == "b38"){
   autosomes = "chr1,chr2,chr3,chr4,chr5,chr6,chr7,chr8,chr9,chr10,chr11,chr12,chr13,chr14,chr15,chr16,chr17,chr18,chr19,chr20,chr21,chr22".split(',')
-  y = "chrX"
-  x = "chrY"
+  x = "chrX"
+  y = "chrY"
+  // No autosomal region changes from build 37 to 38
+  x_par1 = "10001-2781479"
+  x_par2 = "155701383-156030895"
+  y_par1 = "10001-2781479"
+  y_par2 = "56887903-57217415"
   mt = "chrM"
 } else {
   println "\n============================================================================================="
@@ -27,6 +36,12 @@ if (params.build == "b37") {
   println "=============================================================================================\n"
   exit 1
 }
+
+ref_seq = Channel.fromPath(params.ref_seq).toList()
+ref_seq_index = Channel.fromPath(params.ref_seq_index).toList()
+ref_seq_dict = Channel.fromPath(params.ref_seq_dict).toList()
+dbsnp = Channel.fromPath(params.dbsnp).toList()
+dbsnp_index = Channel.fromPath(params.dbsnp_index).toList()
 
 process print_sample_info {
     tag { "${sample_id}" }
@@ -48,6 +63,11 @@ process run_haplotype_caller_on_autosomes {
 
     input:
     set val(sample_id), val(gender), val(bam_file) from samples_2
+    file (ref_seq)
+    file (ref_seq_index)
+    file (ref_seq_dict)
+    file (dbsnp)
+    file (dbsnp_index)
 	  each chr from autosomes
 
     output:
@@ -64,10 +84,10 @@ process run_haplotype_caller_on_autosomes {
     """
     gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g"  \
     HaplotypeCaller \
-    -R ${params.ref_seq} \
+    -R ${ref_seq} \
     -I $bam_file \
     --emit-ref-confidence GVCF \
-    --dbsnp ${params.dbsnp_sites} \
+    --dbsnp ${dbsnp} \
     --L $chr \
     --genotyping-mode DISCOVERY \
     -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
@@ -91,6 +111,11 @@ process run_haplotype_caller_on_x_par1_male {
 
      input:
      set val(sample_id), val(gender), val(bam_file) from samples_male_1
+     file (ref_seq)
+     file (ref_seq_index)
+     file (ref_seq_dict)
+     file (dbsnp)
+     file (dbsnp_index)
 
      output:
 	   set val(sample_id), file("${sample_id}.X_PAR1.g.vcf.gz") into x_par1_calls
@@ -106,11 +131,11 @@ process run_haplotype_caller_on_x_par1_male {
      """
      gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g"  \
      HaplotypeCaller \
-     -R ${params.ref_seq} \
+     -R ${ref_seq} \
      -I $bam_file \
      --emit-ref-confidence GVCF \
-     --dbsnp ${params.dbsnp_sites} \
-     --L ${x}:10001-2781479 \
+     --dbsnp ${dbsnp} \
+     --L ${x}:${x_par1} \
      --genotyping-mode DISCOVERY \
      -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
      -stand-call-conf ${call_conf} \
@@ -128,6 +153,11 @@ process run_haplotype_caller_on_x_par2_male {
 
      input:
      set val(sample_id), val(gender), val(bam_file) from samples_male_2
+     file (ref_seq)
+     file (ref_seq_index)
+     file (ref_seq_dict)
+     file (dbsnp)
+     file (dbsnp_index)
 
      output:
 	   set val(sample_id), file("${sample_id}.X_PAR2.g.vcf.gz") into x_par2_calls
@@ -143,11 +173,11 @@ process run_haplotype_caller_on_x_par2_male {
      """
      gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g"  \
      HaplotypeCaller \
-     -R ${params.ref_seq} \
+     -R ${ref_seq} \
      -I $bam_file \
      --emit-ref-confidence GVCF \
-     --dbsnp ${params.dbsnp_sites} \
-     --L ${x}:155701383-156030895 \
+     --dbsnp ${dbsnp} \
+     --L ${x}:${x_par2} \
      --genotyping-mode DISCOVERY \
      -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
      -stand-call-conf ${call_conf} \
@@ -165,6 +195,11 @@ process run_haplotype_caller_on_x_nonpar_male {
 
      input:
      set val(sample_id), val(gender), val(bam_file) from samples_male_3
+     file (ref_seq)
+     file (ref_seq_index)
+     file (ref_seq_dict)
+     file (dbsnp)
+     file (dbsnp_index)
 
      output:
 	   set val(sample_id), file("${sample_id}.X_nonPAR.g.vcf.gz") into x_nonpar_calls
@@ -180,11 +215,11 @@ process run_haplotype_caller_on_x_nonpar_male {
      """
      gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g"  \
      HaplotypeCaller \
-     -R ${params.ref_seq} \
+     -R ${ref_seq} \
      -I $bam_file \
      --emit-ref-confidence GVCF \
-     --dbsnp ${params.dbsnp_sites} \
-     --L ${x} -XL ${x}:10001-2781479 -XL ${x}:155701383-156030895 \
+     --dbsnp ${dbsnp} \
+     --L ${x} -XL ${x}:${x_par1} -XL ${x}:${x_par2} \
      --genotyping-mode DISCOVERY \
      -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
      -stand-call-conf ${call_conf} \
@@ -202,6 +237,11 @@ process run_haplotype_caller_on_y_par1_male {
 
      input:
      set val(sample_id), val(gender), val(bam_file) from samples_male_4
+     file (ref_seq)
+     file (ref_seq_index)
+     file (ref_seq_dict)
+     file (dbsnp)
+     file (dbsnp_index)
 
      output:
 	   set val(sample_id), file("${sample_id}.Y_PAR1.g.vcf.gz") into y_par1_calls
@@ -217,11 +257,11 @@ process run_haplotype_caller_on_y_par1_male {
      """
      gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g"  \
      HaplotypeCaller \
-     -R ${params.ref_seq} \
+     -R ${ref_seq} \
      -I $bam_file \
      --emit-ref-confidence GVCF \
-     --dbsnp ${params.dbsnp_sites} \
-     --L ${y}:10001-2781479 \
+     --dbsnp ${dbsnp} \
+     --L ${y}:${y_par1} \
      --genotyping-mode DISCOVERY \
      -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
      -stand-call-conf ${call_conf} \
@@ -239,6 +279,11 @@ process run_haplotype_caller_on_y_par2_male {
 
      input:
      set val(sample_id), val(gender), val(bam_file) from samples_male_5
+     file (ref_seq)
+     file (ref_seq_index)
+     file (ref_seq_dict)
+     file (dbsnp)
+     file (dbsnp_index)
 
      output:
 	   set val(sample_id), file("${sample_id}.Y_PAR2.g.vcf.gz") into y_par2_calls
@@ -254,11 +299,11 @@ process run_haplotype_caller_on_y_par2_male {
      """
      gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g"  \
      HaplotypeCaller \
-     -R ${params.ref_seq} \
+     -R ${ref_seq} \
      -I $bam_file \
      --emit-ref-confidence GVCF \
-     --dbsnp ${params.dbsnp_sites} \
-     --L ${y}:56887903-57217415 \
+     --dbsnp ${dbsnp} \
+     --L ${y}:${y_par2} \
      --genotyping-mode DISCOVERY \
      -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
      -stand-call-conf ${call_conf} \
@@ -276,6 +321,11 @@ process run_haplotype_caller_on_y_nonpar_male {
 
      input:
      set val(sample_id), val(gender), val(bam_file) from samples_male_6
+     file (ref_seq)
+     file (ref_seq_index)
+     file (ref_seq_dict)
+     file (dbsnp)
+     file (dbsnp_index)
 
      output:
 	   set val(sample_id), file("${sample_id}.Y_nonPAR.g.vcf.gz") into y_nonpar_calls
@@ -291,11 +341,11 @@ process run_haplotype_caller_on_y_nonpar_male {
      """
      gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g"  \
      HaplotypeCaller \
-     -R ${params.ref_seq} \
+     -R ${ref_seq} \
      -I $bam_file \
      --emit-ref-confidence GVCF \
-     --dbsnp ${params.dbsnp_sites} \
-     --L ${y} -XL ${y}:10001-2781479 -XL ${y}:56887903-57217415 \
+     --dbsnp ${dbsnp_sites} \
+     --L ${y} -XL ${y}:${y_par1} -XL ${y}:${y_par2} \
      --genotyping-mode DISCOVERY \
      -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
      -stand-call-conf ${call_conf} \
@@ -314,6 +364,11 @@ process run_haplotype_caller_on_x_female {
 
      input:
      set val(sample_id), val(gender), val(bam_file) from samples_female
+     file (ref_seq)
+     file (ref_seq_index)
+     file (ref_seq_dict)
+     file (dbsnp)
+     file (dbsnp_index)
 
      output:
 	   set val(sample_id), file("${sample_id}.X.g.vcf.gz") into x_calls
@@ -329,10 +384,10 @@ process run_haplotype_caller_on_x_female {
      """
      gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g" \
      HaplotypeCaller \
-     -R ${params.ref_seq} \
+     -R ${ref_seq} \
      -I $bam_file \
      --emit-ref-confidence GVCF \
-     --dbsnp ${params.dbsnp_sites} \
+     --dbsnp ${dbsnp} \
      --L ${x} \
      --genotyping-mode DISCOVERY \
      -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
@@ -352,6 +407,11 @@ process run_haplotype_caller_on_mt {
 
     input:
     set val(sample_id), val(gender), file(bam_file) from samples_5
+    file (ref_seq)
+    file (ref_seq_index)
+    file (ref_seq_dict)
+    file (dbsnp)
+    file (dbsnp_index)
 
     output:
 	  set val(sample_id), file("${sample_id}.MT.g.vcf.gz") into mt_calls
@@ -367,10 +427,10 @@ process run_haplotype_caller_on_mt {
     """
     gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g"  \
     HaplotypeCaller \
-    -R ${params.ref_seq} \
+    -R ${ref_seq} \
     -I $bam_file \
     --emit-ref-confidence GVCF \
-    --dbsnp ${params.dbsnp_sites} \
+    --dbsnp ${dbsnp} \
     --L ${mt} \
     --genotyping-mode DISCOVERY \
     -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
