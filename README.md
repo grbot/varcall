@@ -33,7 +33,7 @@ wget -O NA12878_R2.fastq.gz ftp://ftp-trace.ncbi.nih.gov/giab/ftp/data/NA12878/G
 
 ## Tested on Ilifu SLURM cluster
 - [x] **align**
-- [ ] **generate-gvcf**
+- [x] **generate-gvcf**
 - [ ] **combine-gvcf**
 - [ ] **genomics-db-import**
 - [x] **cram-to-fastq**
