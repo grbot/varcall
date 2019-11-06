@@ -15,10 +15,11 @@ if (params.build == "b37") {
   autosomes = "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22".split(',')
   x = "X"
   y = "Y"
-  x_par1 = "10001-2781479"
-  x_par2 = "155701383-156030895"
-  y_par1 = "10001-2781479"
-  y_par2 = "56887903-57217415"
+  // Coordinates are from here: https://www.ncbi.nlm.nih.gov/grc/human
+  x_par1 = "60001-2699520"
+  x_par2 = "154931044-155260560"
+  y_par1 = "10001-2649520"
+  y_par2 = "59034050-59363566"
   mt = "MT"
 } else if (params.build == "b38"){
   autosomes = "chr1,chr2,chr3,chr4,chr5,chr6,chr7,chr8,chr9,chr10,chr11,chr12,chr13,chr14,chr15,chr16,chr17,chr18,chr19,chr20,chr21,chr22".split(',')
@@ -51,6 +52,22 @@ process print_sample_info {
     script:
     """
     printf "[sample_info] sample: ${sample_id}\tGender: ${gender}\tBAM: ${bam_file}\n"
+    """
+}
+
+process log_tool_version_gatk {
+    tag { "${params.project_name}.ltVG" }
+    echo true
+    publishDir "${params.out_dir}/", mode: 'copy', overwrite: false
+    label 'gatk'
+
+    output:
+    file("tool.gatk.version") into tool_version_gatk
+
+    script:
+    mem = task.memory.toGiga() - 3
+    """
+    gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms500m -Xmx${mem}g" --version > tool.gatk.version 2>&1
     """
 }
 
@@ -344,7 +361,7 @@ process run_haplotype_caller_on_y_nonpar_male {
      -R ${ref_seq} \
      -I $bam_file \
      --emit-ref-confidence GVCF \
-     --dbsnp ${dbsnp_sites} \
+     --dbsnp ${dbsnp} \
      --L ${y} -XL ${y}:${y_par1} -XL ${y}:${y_par2} \
      --genotyping-mode DISCOVERY \
      -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
