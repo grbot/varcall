@@ -1,6 +1,6 @@
 # Intro
 
-The Nextflow scripts in this repository were mostly used for a specific H3Africa project. The project contained datasets at different stages e.g Fastq, BAM/CRAM and gVCF so it made sense just to process the set at stages where necessary. Some parts of the code has now been adapted to run on containers and the aim is to have all running on containers at the end.
+The Nextflow scripts in this repository were mostly used for a specific H3Africa project. The project contained datasets at different stages e.g Fastq, BAM/CRAM and gVCF so it made sense just to process the set at stages where necessary. Parts of the code have been adopted to run on containers and the aim is to have all running on containers at the end.
 
 ## To run
 
@@ -35,7 +35,8 @@ wget -O NA12878_R2.fastq.gz ftp://ftp-trace.ncbi.nih.gov/giab/ftp/data/NA12878/G
 - [x] **align**
 - [x] **generate-gvcf**
 - [ ] **combine-gvcf**
-- [ ] **genomics-db-import**
+- [x] **genomics-db-import**
+- [ ] **genome-calling**
 - [x] **cram-to-fastq**
 - [x] **bam-to-cram**
 - [ ] **index-bams**
