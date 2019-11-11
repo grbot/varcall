@@ -134,7 +134,7 @@ if (params.build == "b37") {
 }
 
 if (params.build == "b38") {
-  process run_concat_vcf_build37 {
+  process run_concat_vcf_build38 {
        tag { "${params.project_name}.${params.cohort_id}.rCV" }
        memory { 16.GB * task.attempt }  
        publishDir "${params.out_dir}/${params.cohort_id}/genome-calling", mode: 'copy', overwrite: false
