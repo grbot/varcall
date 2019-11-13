@@ -10,11 +10,26 @@ Channel.fromPath( file(params.sample_sheet) )
             return [ sample_id, bam_file ]
         }.set{samples}
 
+process log_tool_version_samtools {
+    tag { "${params.project_name}.ltV" }
+    echo true
+    publishDir "${params.out_dir}/bam-flagstat", mode: 'copy', overwrite: false
+    label 'bwa_samtools'
+
+    output:
+    file("tool.samtools.version") into tool_version_samtool
+
+    script:
+    """
+    samtools --version > tool.samtools.version
+    """
+}
 
 process run_flagstat {
     tag { "${params.project_name}.${sample_id}.rF" }
     echo true
-    publishDir "${params.out_dir}/${sample_id}", mode: 'symlink', overwrite: false
+    publishDir "${params.out_dir}/bam-flagstat/${sample_id}", mode: 'move', overwrite: false
+    label 'bwa_samtools'
     input:
     set val(sample_id), file(bam_file) from samples
 
@@ -23,7 +38,7 @@ process run_flagstat {
 
     script:
     """
-    ${params.samtools_base}/samtools flagstat \
+    samtools flagstat \
     -@ 1 \
     ${bam_file} > ${bam_file}.flagstat  \
     """
