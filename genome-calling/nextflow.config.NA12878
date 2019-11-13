@@ -2,7 +2,6 @@ params{
     project_name = "ri"
     cohort_id =  "NA12878"
     out_dir = "/cbio/users/gerrit/scratch/nextflow-out"
-    gvcf_file = "/cbio/datasets/human/giab/b37/gvcf/NA12878.g.vcf.gz"
    
     sample_coverage = "low"
   
@@ -30,6 +29,11 @@ params{
     max_gaussians_indels = 8
  
     build = "b37" // or b38
+
+    db = no // if no calling from a combined gvcf
+    db_path = "/" // no need to set if db_impot = no
+    	
+    gvcf = "/cbio/datasets/human/giab/b37/gvcf/NA12878.g.vcf.gz" // specify if db = yes
 }
 
 executor{

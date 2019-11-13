@@ -1,8 +1,5 @@
 #!/usr/bin/env nextflow
 
-Channel.from( file(params.gvcf_file) )
-        .set{ gvcf_file_ch }
-
 if (params.build == "b37") {
   chroms = "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,X,Y,MT".split(',')
 } else if (params.build == "b38"){
@@ -13,6 +10,9 @@ if (params.build == "b37") {
     println "=============================================================================================\n"
     exit 1
 }
+
+db = file(params.db_path)
+db_import = params.db_import
 
 ref_seq = Channel.fromPath(params.ref_seq).toList()
 ref_seq_index = Channel.fromPath(params.ref_seq_index).toList()
@@ -44,40 +44,86 @@ process log_tool_version_gatk {
     """
 }
 
-process run_genotype_gvcf_on_genome {
-    tag { "${params.project_name}.${params.cohort_id}.${chr}.rGGoG" }
-    memory { 16.GB * task.attempt }  
-    publishDir "${params.out_dir}/${params.cohort_id}/genome-calling", mode: 'copy', overwrite: false
-    label 'gatk'
+if (db_import == "no") {
+
+Channel.from( file(params.gvcf) )
+        .set{ gvcf_ch }
+
+  process run_genotype_gvcf_on_genome_gvcf {
+      tag { "${params.project_name}.${params.cohort_id}.${chr}.rGGoG" }
+      memory { 16.GB * task.attempt }  
+      publishDir "${params.out_dir}/${params.cohort_id}/genome-calling", mode: 'copy', overwrite: false
+      label 'gatk'
+    
+      input:
+      val gvcf from gvcf_ch
+      file ref_seq
+      file ref_seq_index
+      file ref_seq_dict
+      each chr from chroms
   
-    input:
-    val (gvcf_file) from gvcf_file_ch
-    file ref_seq
-    file ref_seq_index
-    file ref_seq_dict
-    each chr from chroms
+      output:
+      set chr, file("${params.cohort_id}.${chr}.vcf.gz"), file("${params.cohort_id}.${chr}.vcf.gz.tbi") into gg_vcf_set
+      file("${params.cohort_id}.${chr}.vcf.gz") into gg_vcf
+  
+      script:
+        mem = task.memory.toGiga() - 4
+        call_conf = 30 // set default
+        if ( params.sample_coverage == "high" )
+          call_conf = 30
+        else if ( params.sample_coverage == "low" )
+          call_conf = 10
+      """
+      gatk --java-options  "-XX:+UseSerialGC -Xms4g -Xmx${mem}g" \
+      GenotypeGVCFs \
+      -R ${ref_seq} \
+      -L $chr \
+      -V ${gvcf} \
+      -stand-call-conf ${call_conf} \
+      -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
+      --allow-old-rms-mapping-quality-annotation-data \
+      -O "${params.cohort_id}.${chr}.vcf.gz"
+      """
+  }
+}
 
-    output:
-    set chr, file("${params.cohort_id}.${chr}.vcf.gz"), file("${params.cohort_id}.${chr}.vcf.gz.tbi") into gg_vcf_set
-    file("${params.cohort_id}.${chr}.vcf.gz") into gg_vcf
-
-    script:
-      mem = task.memory.toGiga() - 4
-      call_conf = 30 // set default
-      if ( params.sample_coverage == "high" )
-        call_conf = 30
-      else if ( params.sample_coverage == "low" )
-        call_conf = 10
-    """
-    gatk --java-options  "-XX:+UseSerialGC -Xms4g -Xmx${mem}g" \
-    GenotypeGVCFs \
-    -R ${ref_seq} \
-    -L $chr \
-    -V ${gvcf_file} \
-    -stand-call-conf ${call_conf} \
-    -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
-    -O "${params.cohort_id}.${chr}.vcf.gz"
-    """
+if (db_import == "yes") {
+  process run_genotype_gvcf_on_genome_db {
+      tag { "${params.project_name}.${params.cohort_id}.${chr}.rGGoG" }
+      memory { 48.GB * task.attempt }  
+      publishDir "${params.out_dir}/${params.cohort_id}/genome-calling", mode: 'copy', overwrite: false
+      label 'gatk'
+    
+      input:
+      file ref_seq
+      file ref_seq_index
+      file ref_seq_dict
+      file db
+      each chr from chroms
+  
+      output:
+      set chr, file("${params.cohort_id}.${chr}.vcf.gz"), file("${params.cohort_id}.${chr}.vcf.gz.tbi") into gg_vcf_set
+      file("${params.cohort_id}.${chr}.vcf.gz") into gg_vcf
+  
+      script:
+        mem = task.memory.toGiga() - 16
+        call_conf = 30 // set default
+        if ( params.sample_coverage == "high" )
+          call_conf = 30
+        else if ( params.sample_coverage == "low" )
+          call_conf = 10
+      """
+      gatk --java-options  "-XX:+UseSerialGC -Xms4g -Xmx${mem}g" \
+      GenotypeGVCFs \
+      -R ${ref_seq} \
+      -L $chr \
+      -V gendb://${db}/${chr}.gdb \
+      -stand-call-conf ${call_conf} \
+      -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
+      --allow-old-rms-mapping-quality-annotation-data \
+      -O "${params.cohort_id}.${chr}.vcf.gz"
+      """
+  }
 }
 
 gg_vcf.toList().set{ concat_ready  }
