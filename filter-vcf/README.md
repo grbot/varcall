@@ -10,7 +10,7 @@ Pleas  see `nextflow.conf` for GATK version and references databases used. Path 
 ## To run
 
 For each dataset
-1) Modify your `nextflow.config` to read the `in_files` and specify the output directory e.g. `out_dir = "/global/scratch/gerrit/projects/adme/datasets/NA12878/nextflow-out"`
+1) Modify your `nextflow.config` to read the `in_files` and specify the output directory. 
 2) Run the workflow
 ```
 nextflow run /home/gerrit/code/recalling/filter-vcf/main.nf  -c /home/gerrit/code/recalling/filter-vcf/nextflow.config.NA12878

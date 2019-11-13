@@ -10,18 +10,33 @@ Channel.fromPath( file(params.sample_sheet) )
             return [ sample_id, bam_file ]
         }.set{samples}
 
+process log_tool_version_samtools_bwa {
+    tag { "${params.project_name}.ltV" }
+    echo true
+    publishDir "${params.out_dir}/bam-index", mode: 'move', overwrite: false
+    label 'bwa_samtools'
+
+    output:
+    file("tool.samtools.bwa.version") into tool_version_samtools_bwa
+
+    script:
+    """
+    samtools --version > tool.samtools.bwa.version
+    bwa 2>&1 | head -n 5 >> tool.samtools.bwa.version
+    """
+}
 
 process index_bam {
     tag { "${sample_id}" }
-    echo true
-    publishDir "${params.out_dir}/${sample_id}", mode: 'copy', overwrite: false
+    publishDir "${params.out_dir}/bam-index/${sample_id}", mode: 'move', overwrite: false
+    label 'bwa_tools'
     input:
     set val(sample_id), file(bam_file) from samples
     output:
     file("*.bai")
     script:
     """
-    ${params.samtools_base}/samtools index ${bam_file}
+    samtools index ${bam_file}
     """
 }
 
