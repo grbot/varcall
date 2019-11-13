@@ -39,6 +39,6 @@ wget -O NA12878_R2.fastq.gz ftp://ftp-trace.ncbi.nih.gov/giab/ftp/data/NA12878/G
 - [x] **genome-calling**
 - [x] **cram-to-fastq**
 - [x] **bam-to-cram**
-- [ ] **index-bams**
-- [ ] **filter-vcf**
-- [ ] **bam-flagstat**
+- [x] **index-bams**
+- [x] **filter-vcf**
+- [x] **bam-flagstat**

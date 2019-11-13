@@ -1,87 +1,50 @@
 params{
-    project_name = "ADME"
-    cohort_id =  "NA12878"
-    out_dir = "/global5/scratch/gerrit/projects/adme/datasets/NA12878/nextflow-out"
-
-    bcftools_base = "/opt/exp_soft/bcftools-1.9/"
-    
-    in_files = "/global5/scratch/gerrit/projects/adme/datasets/NA12878/nextflow-out/NA12878/genome-calling/NA12878.recal-SNP.recal-INDEL.vcf.gz*"
-
-    max_memory = 512.GB
-    max_cpus = 64
-    max_time = 720.h
+  project_name = "NA12878"
+  cohort_id =  "NA12878"
+  out_dir = "/global5/scratch/gerrit/projects/adme/datasets/NA12878/nextflow-out"
+  in_files = "/global5/scratch/gerrit/projects/adme/datasets/NA12878/nextflow-out/NA12878/genome-calling/NA12878.recal-SNP.recal-INDEL.vcf.gz*"
 }
 
-executor{
-    jobName = { "$task.tag" }
-}
+process {
+    cache = true
 
-process{
-    cpus = { check_max( 1 * task.attempt, 'cpus' ) }
-    memory = { check_max( 2.GB * task.attempt, 'memory' ) }
-    time = { check_max( 2.h * task.attempt, 'time' ) }
-
-    withLabel: "bigmem"{
-        cpus = { check_max( 1 * task.attempt, 'cpus' ) }
-        memory = { check_max( 30.GB * task.attempt, 'memory' ) }
-        time = { check_max( 96.h * task.attempt, 'time' ) }
+    withLabel: bcftools {
+         container = 'docker://quay.io/grbot/bcftools'
     }
+
+    cpus = 1
+    memory = 4.GB
+    time = 12.h
+    errorStrategy = 'retry'
+    maxRetries = 5
+    maxErrors = 1000
+
 }
 
 profiles {
     standard {
         process.executor = 'local'
     }
-    wits_slurm {
-        process {
-            executor = 'slurm'
-            errorStrategy = 'retry'
-            maxRetries = 5
-            maxErrors = 1000
-        }
+    ilifu {
+        process.executor = 'slurm'
+        process.queue = 'Main'
     }
-   cbio {
-        process.executor = 'pbs'
-        process.queue = 'dev'
-        process.time = 96.h
-        process.errorStrategy = 'retry'
-        process.maxRetries = 1
-        process.maxErrors = 1000
-        process.clusterOptions = '-M gerrit.botha@uct.ac.za -m abe'
-    }   
-   
+    wits {
+        process.executor = 'slurm'
+        process.queue = 'batch'
+    }
+    cbio {
+         process.executor = 'pbs'
+         process.queue = 'dev'
+    }
 }
 
+trace {
+    enabled = true
+    file = "${params.project_name}.trace.txt"
+}
 
-// Function to ensure that resource requirements don't go beyond
-// a maximum limit
-def check_max(obj, type) {
-    if(type == 'memory'){
-        try {
-            if(obj.compareTo(params.max_memory as nextflow.util.MemoryUnit) == 1)
-                return params.max_memory as nextflow.util.MemoryUnit
-            else
-                return obj
-        } catch (all) {
-            println "   ### ERROR ###   Max memory '${params.max_memory}' is not valid! Using default value: $obj"
-            return obj
-        }
-    } else if(type == 'time'){
-        try {
-            if(obj.compareTo(params.max_time as nextflow.util.Duration) == 1)
-                return params.max_time as nextflow.util.Duration
-            else
-                return obj
-        } catch (all) {
-            println "   ### ERROR ###   Max time '${params.max_time}' is not valid! Using default value: $obj"
-            return obj
-        }
-    } else if(type == 'cpus'){
-        try {
-            return Math.min( obj, params.max_cpus as int )
-        } catch (all) {
-            println "   ### ERROR ###   Max cpus '${params.max_cpus}' is not valid! Using default value: $obj"
-            return obj
-        }
-    }
+singularity {
+  autoMounts = true
+  enabled = true
 }
