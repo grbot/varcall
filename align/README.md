@@ -38,5 +38,5 @@ The output directory will contain per sample directories. Each sample directory 
 2. `NA12878.md.bam` - BAM file after running MarkDuplicates (soft linked)
 3. `NA12878.md.recal.bam` - BAM file after running GATK BQSR (final BAM) (soft linked)
 4. `NA12878.md.recal.cram` - CRAM file converted from `NA12878.md.recal.bam` (copy)
-5. `NA12878.md.recal.cram.flagstat` - Samtools stats on `NA12878.md.recal.bam` (copy)
+5. `NA12878.md.recal.cram.flagstat` - Samtools stats on `NA12878.md.recal.cram` (copy)
 6. `NA12878.md.recal.cram.md5sum` - Md5sum of `NA12878.md.recal.cram` (copy)

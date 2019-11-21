@@ -16,12 +16,13 @@ Channel.fromPath( file(params.sample_sheet) )
         .collect().set { gvcf_files }
 
 db = file(params.db_path)
+db_update = params.db_update
 
-if ( (db_update == "yes") && db.exists()   ){
+if ( (db_update == "yes") && db.exists() ){
   println "Db:${db} exists. Making a copy before update."
 
-  process makeCopy {
-    publishDir "${baseDir}", mode: 'move', overwrite: false
+  process make_copy {
+    publishDir "${params.out_dir}/genomics-db-import", mode: 'move', overwrite: false
     input:
     file db
 
@@ -30,27 +31,33 @@ if ( (db_update == "yes") && db.exists()   ){
 
     script:
     """
-    cp -L ${db} ${db.getName()}.backup
+    cp -rL ${db} ${db.getName()}.backup
     """
   }
 } else if ( (db_update == "yes") && !db.exists() ){
-  println "Did not find existing db:${db} please specify the correct path."
-  exit 1
-} else if ( db_update == "no" ){
-  println "Creating new db:${db}."
+    println "Did not find existing db:${db} please specify the correct path."
+    exit 1
+} else if ( ( db_update == "no" ) && !db.exists() ){
+    println "Creating new db:${db}"
+    result = db.mkdir()
+    println result ? "OK" : "Cannot create directory: $db"
+} else if ( ( db_update == "no" ) && db.exists() ){
+    println "Db exists:${db} . Please check if you want to create new. If so please delete first."
+    exit 1
 }
 
 if (params.build == "b37") {
   chroms = "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,X,Y,MT".split(',')
 } else if (params.build == "b38"){
-  chroms = "chr1,chr2,chr3,chr4,chr5,chr6,chr7,chr8,chr9,chr10,chr11,chr12,chr13,chr14,chr15,chr16,chr17,chr18,chr19,chr20,chr21,chr22,chrX,chrY,chrM".split(',')
+    chroms = "chr1,chr2,chr3,chr4,chr5,chr6,chr7,chr8,chr9,chr10,chr11,chr12,chr13,chr14,chr15,chr16,chr17,chr18,chr19,chr20,chr21,chr22,chrX,chrY,chrM".split(',')
 } else {
-  println "\n============================================================================================="
-  println "Please specify a genome build (b37 or b38)!"
-  println "=============================================================================================\n"
-  exit 1
+    println "\n============================================================================================="
+    println "Please specify a genome build (b37 or b38)!"
+    println "=============================================================================================\n"
+    exit 1
 }
 
+/*
 process print_sample_info {
     tag { "${sample_id}" }
     echo true
@@ -61,10 +68,27 @@ process print_sample_info {
     printf "[sample_info] sample: ${sample_id}\tgVCF: ${gvcf_file}\n"
     """
 }
+*/
+
+process log_tool_version_gatk {
+    tag { "${params.project_name}.ltVG" }
+    echo true
+    publishDir "${params.out_dir}/genomics-db-import", mode: 'copy', overwrite: false
+    label 'gatk'
+
+    output:
+    file("tool.gatk.version") into tool_version_gatk
+
+    script:
+    mem = task.memory.toGiga() - 3
+    """
+    gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms500m -Xmx${mem}g" --version > tool.gatk.version 2>&1
+    """
+}
 
 process create_variant_list {
-    tag { "${params.project_name}.${params.cohort_id}.cVL" }
-    publishDir "${params.out_dir}/${params.cohort_id}/genomics-db-import", mode: 'copy', overwrite: false
+    tag { "${params.project_name}.cVL" }
+    publishDir "${params.out_dir}/genomics-db-import", mode: 'symlink', overwrite: false
 
     input:
     val gvcf_file from gvcf_files
@@ -78,37 +102,63 @@ process create_variant_list {
     """
 }
 
-process run_genomics_db_import {
-    tag { "${params.project_name}.${params.cohort_id}.${chr}.rGDI" }
-    label 'bigmem'
-    publishDir "${params.out_dir}/${params.cohort_id}", mode: 'copy', overwrite: false
-
-    input:
-    file(gvcf_list)
-    each chr from chroms
-    file db
-    val db_update
-
-    output:
-    file("${params.cohort_id}.${chr}.gdb")  into cohort_chr_calls
-
-    script:
-    if (db_update == "no"){
+if (db_update == "no"){
+  process run_genomics_db_import_new {
+      tag { "${params.project_name}.${chr}.rGDIN" }
+      memory { 24.GB * task.attempt }  
+      publishDir "${params.out_dir}/genomics-db-import", mode: 'symlink', overwrite: false
+      label 'gatk'
+  
+      input:
+      file(gvcf_list)
+      file db
+      each chr from chroms 
+  
+      output:
+      file("${db}/${chr}.gdb")  into cohort_chr_calls
+  
+      script:
+      mem = task.memory.toGiga() - 10
+        // We delete the database first if it was created on a failed run. E.g. when memory was to low on previous nextflow process.
       """
-      ${params.gatk_base}/gatk --java-options "-Xmx${task.memory.toGiga()}g"  \
+      rm -rf ${db}/${chr}.gdb && \
+      gatk --java-options "-XX:+UseSerialGC -Xms4g -Xmx${mem}g"  \
       GenomicsDBImport \
       --L ${chr} \
       --variant ${gvcf_list} \
       --genomicsdb-workspace-path ${db}/${chr}.gdb
       """
-    }else if (db_update == "yes"){
-    ${params.gatk_base}/gatk --java-options "-Xmx${task.memory.toGiga()}g"  \
-    GenomicsDBImport \
-    --L ${chr} \
-    --variant ${gvcf_list} \
-    --genomicsdb-update-workspace-path ${db}/${chr}.gdb
-    }
+  }
 }
+
+if (db_update == "yes"){
+  process run_genomics_db_import_update {
+      tag { "${params.project_name}.${chr}.rGDIU" }
+      memory { 24.GB * task.attempt }  
+      publishDir "${params.out_dir}/genomics-db-import", mode: 'symlink', overwrite: false
+      label 'gatk'
+  
+      input:
+      file(gvcf_list)
+      file db
+      file db_backup // this staging forces the process to wait for the backup to be made before continuing
+      each chr from chroms 
+  
+      output:
+      file("${db}/${chr}.gdb")  into cohort_chr_calls
+  
+      script:
+      mem = task.memory.toGiga() - 10
+      """
+      gatk --java-options "-XX:+UseSerialGC -Xms4g -Xmx${mem}g"  \
+      GenomicsDBImport \
+      --L ${chr} \
+      --variant ${gvcf_list} \
+      --genomicsdb-update-workspace-path ${db}/${chr}.gdb
+      """
+  }
+}
+
 
 workflow.onComplete {
 

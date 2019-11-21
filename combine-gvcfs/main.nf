@@ -15,7 +15,20 @@ Channel.fromPath( file(params.sample_sheet) )
         }
         .collect().set { gvcf_files }
 
-chroms = "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,X,Y,MT".split(',')
+if (params.build == "b37") {
+  chroms = "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,X,Y,MT".split(',')
+} else if (params.build == "b38"){
+    chroms = "chr1,chr2,chr3,chr4,chr5,chr6,chr7,chr8,chr9,chr10,chr11,chr12,chr13,chr14,chr15,chr16,chr17,chr18,chr19,chr20,chr21,chr22,chrX,chrY,chrM".split(',')
+} else {
+    println "\n============================================================================================="
+    println "Please specify a genome build (b37 or b38)!"
+    println "=============================================================================================\n"
+    exit 1
+}
+
+ref_seq = Channel.fromPath(params.ref_seq).toList()
+ref_seq_index = Channel.fromPath(params.ref_seq_index).toList()
+ref_seq_dict = Channel.fromPath(params.ref_seq_dict).toList()
 
 process print_sample_info {
     tag { "${sample_id}" }
@@ -30,9 +43,25 @@ process print_sample_info {
     """
 }
 
+process log_tool_version_gatk {
+    tag { "${params.project_name}.ltVG" }
+    echo true
+    publishDir "${params.out_dir}/genome-calling", mode: 'copy', overwrite: false
+    label 'gatk'
+
+    output:
+    file("tool.gatk.version") into tool_version_gatk
+
+    script:
+    mem = task.memory.toGiga() - 3
+    """
+    gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms500m -Xmx${mem}g" --version > tool.gatk.version 2>&1
+    """
+}
+
 process create_variant_list {
-    tag { "${params.project_name}.${params.cohort_id}.cVL" }
-    publishDir "${params.out_dir}/${params.cohort_id}/combine-gvcfs", mode: 'copy', overwrite: false
+    tag { "${params.project_name}.cVL" }
+    publishDir "${params.out_dir}/combine-gvcfs", mode: 'copy', overwrite: false
 
     input:
     val gvcf_file from gvcf_files
@@ -47,12 +76,16 @@ process create_variant_list {
 }
 
 process run_combine_gvcfs {
-    tag { "${params.project_name}.${params.cohort_id}.${chr}.rCG" }
-    label 'bigmem'
-    publishDir "${params.out_dir}/${params.cohort_id}", mode: 'copy', overwrite: false
-
+    tag { "${params.project_name}.${chr}.rCG" }
+    memory { 16.GB * task.attempt } 
+    publishDir "${params.out_dir}/combine-gvcfs", mode: 'copy', overwrite: false
+    label 'gatk'
+    
     input:
     file(gvcf_list)
+    file ref_seq
+    file ref_seq_index
+    file ref_seq_dict
     each chr from chroms
 
     output:
@@ -60,8 +93,9 @@ process run_combine_gvcfs {
     file("${params.cohort_id}.${chr}.g.vcf.gz.tbi") into cohort_chr_indexes
 
     script:
+    mem = task.memory.toGiga() - 4
     """
-    ${params.gatk_base}/gatk --java-options "-Xmx${task.memory.toGiga()}g"  \
+    gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms500m -Xmx${mem}g"  \
     CombineGVCFs \
     -R ${params.ref_seq} \
     --L ${chr} \
@@ -72,54 +106,107 @@ process run_combine_gvcfs {
 
 cohort_chr_calls.toList().into{ cohort_calls }
 
-process run_concat_combine_gvcf {
-     tag { "${params.project_name}.${params.cohort_id}.rCCG" }
-     cpus { 20 }
-     publishDir "${params.out_dir}/${params.cohort_id}", mode: 'copy', overwrite: false
-
-     input:
-     file(gvcf) from cohort_calls
-
-     output:
-	   set val(params.cohort_id), file("${params.cohort_id}.g.vcf.gz") into combine_calls
-	   set val(params.cohort_id), file("${params.cohort_id}.g.vcf.gz.tbi") into combine_calls_indexes
-
-     script:
-     """
-     echo "${gvcf.join('\n')}" | grep "\\.1\\.g.vcf.gz" > ${params.cohort_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.2\\.g.vcf.gz" >> ${params.cohort_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.3\\.g.vcf.gz" >> ${params.cohort_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.4\\.g.vcf.gz" >> ${params.cohort_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.5\\.g.vcf.gz" >> ${params.cohort_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.6\\.g.vcf.gz" >> ${params.cohort_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.7\\.g.vcf.gz" >> ${params.cohort_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.8\\.g.vcf.gz" >> ${params.cohort_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.9\\.g.vcf.gz" >> ${params.cohort_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.10\\.g.vcf.gz" >> ${params.cohort_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.11\\.g.vcf.gz" >> ${params.cohort_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.12\\.g.vcf.gz" >> ${params.cohort_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.13\\.g.vcf.gz" >> ${params.cohort_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.14\\.g.vcf.gz" >> ${params.cohort_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.15\\.g.vcf.gz" >> ${params.cohort_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.16\\.g.vcf.gz" >> ${params.cohort_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.17\\.g.vcf.gz" >> ${params.cohort_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.18\\.g.vcf.gz" >> ${params.cohort_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.19\\.g.vcf.gz" >> ${params.cohort_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.20\\.g.vcf.gz" >> ${params.cohort_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.21\\.g.vcf.gz" >> ${params.cohort_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.22\\.g.vcf.gz" >> ${params.cohort_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.X\\.g.vcf.gz" >> ${params.cohort_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.Y\\.g.vcf.gz" >> ${params.cohort_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.MT\\.g\\.vcf\\.gz" >> ${params.cohort_id}.gvcf.list
-    
-     ${params.gatk_base}/gatk --java-options "-Xmx${task.memory.toGiga()}g"  \
-     GatherVcfs \
-     -I ${params.cohort_id}.gvcf.list \
-     -O ${params.cohort_id}.g.vcf.gz # GatherVCF does not index the VCF. The VCF will be indexed in the next tabix operation.
-     ${params.tabix_base}/tabix -p vcf ${params.cohort_id}.g.vcf.gz 
-     """
+if (params.build == "b37") {
+  process run_concat_vcf_build37 {
+       tag { "${params.project_name}.rCV" }
+       memory { 16.GB * task.attempt }  
+       publishDir "${params.out_dir}/combine-gvcfs", mode: 'copy', overwrite: false
+       label 'gatk'
+  
+       input:
+       file(vcf) from concat_ready
+  
+       output:
+  	   set file("${params.cohort_id}.vcf.gz"), file("${params.cohort_id}.vcf.gz.tbi") into combined_calls
+  
+       script:
+         mem = task.memory.toGiga() - 4
+       """
+       echo "${vcf.join('\n')}" | grep "\\.1\\.vcf.gz" > ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.2\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.3\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.4\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.5\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.6\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.7\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.8\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.9\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.10\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.11\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.12\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.13\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.14\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.15\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.16\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.17\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.18\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.19\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.20\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.21\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.22\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.X\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.Y\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.MT\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       
+       gatk --java-options  "-XX:+UseSerialGC -Xms4g -Xmx${mem}g" \
+       GatherVcfs \
+       -I ${params.cohort_id}.vcf.list \
+       -O ${params.cohort_id}.vcf.gz # GatherVCF does not index the VCF. The VCF will be indexed in the next tabix operation.
+       tabix -p vcf ${params.cohort_id}.vcf.gz
+       """
+  }
 }
 
+if (params.build == "b38") {
+  process run_concat_vcf_build38 {
+       tag { "${params.project_name}.rCV" }
+       memory { 16.GB * task.attempt }  
+       publishDir "${params.out_dir}/combine-gvcfs", mode: 'copy', overwrite: false
+       label 'gatk'
+  
+       input:
+       file(vcf) from concat_ready
+  
+       output:
+  	   set file("${params.cohort_id}.vcf.gz"), file("${params.cohort_id}.vcf.gz.tbi") into combined_calls
+  
+       script:
+         mem = task.memory.toGiga() - 4
+       """
+       echo "${vcf.join('\n')}" | grep "\\.chr1\\.vcf.gz" > ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr2\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr3\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr4\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr5\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr6\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr7\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr8\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr9\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr10\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr11\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr12\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr13\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr14\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr15\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr16\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr17\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr18\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr19\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr20\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr21\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr22\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chrX\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chrY\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chrM\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       
+       gatk --java-options  "-XX:+UseSerialGC -Xms4g -Xmx${mem}g" \
+       GatherVcfs \
+       -I ${params.cohort_id}.vcf.list \
+       -O ${params.cohort_id}.vcf.gz # GatherVCF does not index the VCF. The VCF will be indexed in the next tabix operation.
+       tabix -p vcf ${params.cohort_id}.vcf.gz
+       """
+  }
+}
 
 workflow.onComplete {
 

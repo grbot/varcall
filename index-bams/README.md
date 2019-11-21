@@ -1,6 +1,6 @@
 # Intro
 
-Some BAMs we received were not indexed. This nextflow pipeline indexes the BAMs (indexes are created in the location where the BAMs are stored).
+This nextflow pipeline indexes the BAMs/CRAMs.
 
 
 ## Sample sheet format
@@ -19,12 +19,12 @@ Below is the sample sheet format. The sample sheet should be a tab delimmted tex
 ## To run
 
 For each dataset
-1) Create your sample sheet. E.g. `1kg_african.samplesheet.tsv` for the 1KG African dataset.
-2) Modify your `nextflow.config` to read the `1kg_african.samplesheet.tsv`
+1) Create your sample sheet. E.g. `samplesheet.tsv`.
+2) Modify your `nextflow.config` to read the `samplesheet.tsv`
 3) Run the workflow
 
 ```
-nextflow -log nextflow.log run -w /spaces/gerrit/projects/adme/datasets/1kg_african/nextflow-work -c nextflow.config.1kg_african main.nf -profile wits -with-report 1kg_african.report.html -with-trace -with-timeline 1kg_african.timeline.html -resume
+nextflow -log nextflow.log run -w work -c config -profile ilifu -with-report report.html -with-trace -with-timeline timeline.html -resume
 ```
 
 ## Note

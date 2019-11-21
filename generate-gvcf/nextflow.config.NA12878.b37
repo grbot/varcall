@@ -1,17 +1,19 @@
 params{
   project_name = "NA12878"
-  sample_sheet = "/home/gerrit/code/recalling/generate-gvcf/NA12878.samplesheet.tsv"
+  sample_sheet = "/users/gerrit/projects/refimpute/varcall/generate-gvcf/NA12878.samplesheet.tsv"
   sample_coverage = "high"
-  out_dir = "/global5/scratch/gerrit/projects/adme/datasets/NA12878/nextflow-out"
+  out_dir = "/cbio/users/gerrit/scratch/nextflow-out/NA12878/b37/"
 
   // GATK specific settings
-  ref_seq = "/cbio/dbs/gatk/hg38/Homo_sapiens_assembly38.fasta"
-  dbsnp_sites = "/cbio/dbs/gatk/hg38/dbsnp_146.hg38.vcf.gz"
-
+  ref_seq = "/cbio/dbs/gatk/2.8/b37/human_g1k_v37_decoy.fasta"
+  ref_seq_index = "/cbio/dbs/gatk/2.8/b37/human_g1k_v37_decoy.fasta.fai"
+  ref_seq_dict = "/cbio/dbs/gatk/2.8/b37/human_g1k_v37_decoy.dict"
+  dbsnp = "/cbio/dbs/gatk/2.8/b37/dbsnp_138.b37.vcf"
+  dbsnp_index = "/cbio/dbs/gatk/2.8/b37/dbsnp_138.b37.vcf.idx"
+  
   build = "b37"
 
 }
-
 
 process{
 

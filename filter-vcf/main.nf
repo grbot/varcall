@@ -10,10 +10,26 @@ Channel.fromFilePairs(in_files)
           return m[0][1]
         }.into { vcfs1 ; vcfs2 }
 
+process log_tool_version_bcftools {
+    tag { "${params.project_name}.ltViB" }
+    echo true
+    publishDir "${params.out_dir}/${params.cohort_id}/filter-vcf", mode: 'move', overwrite: false
+    label 'gatk'
+
+    output:
+    file("tool.bcftools.version") into tool_version_bcftools
+
+    script:
+    mem = task.memory.toGiga() - 3
+    """
+    bcftools --version > tool.bcftools.version 2>&1
+    """
+}
 
 process filter_short_snps_indels {
     tag { "${params.project_name}.${params.cohort_id}.fSSI" }
-    publishDir "${out_dir}/${params.cohort_id}/filter-vcf", mode: 'copy', overwrite: false
+    publishDir "${out_dir}/${params.cohort_id}/filter-vcf", mode: 'move', overwrite: false
+    label 'bcftools'
     input:
       set val (file_name), file (vcf) from vcfs1
     output:
@@ -22,7 +38,7 @@ process filter_short_snps_indels {
     script:
     filebase = (file(vcf[0].baseName)).baseName
     """
-    ${params.bcftools_base}/bcftools view \
+    bcftools view \
     --include "FILTER='PASS'" \
     -O z \
     -o "${filebase}.filter-pass.vcf.gz" \
@@ -32,7 +48,8 @@ process filter_short_snps_indels {
 
 process filter_other {
     tag { "${params.project_name}.${params.cohort_id}.fO" }
-    publishDir "${out_dir}/${params.cohort_id}/filter-vcf", mode: 'copy', overwrite: false
+    publishDir "${out_dir}/${params.cohort_id}/filter-vcf", mode: 'move', overwrite: false
+    label 'bcftools'
     input:
       set val (file_name), file (vcf) from vcfs2
     output:
@@ -41,7 +58,7 @@ process filter_other {
     script:
     filebase = (file(vcf[0].baseName)).baseName
     """
-    ${params.bcftools_base}/bcftools view \
+    bcftools view \
     --include "FILTER='.'" \
     -O z \
     -o "${filebase}.filter-other.vcf.gz" \
