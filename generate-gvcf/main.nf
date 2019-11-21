@@ -44,6 +44,7 @@ ref_seq_dict = Channel.fromPath(params.ref_seq_dict).toList()
 dbsnp = Channel.fromPath(params.dbsnp).toList()
 dbsnp_index = Channel.fromPath(params.dbsnp_index).toList()
 
+/*
 process print_sample_info {
     tag { "${sample_id}" }
     echo true
@@ -54,6 +55,7 @@ process print_sample_info {
     printf "[sample_info] sample: ${sample_id}\tGender: ${gender}\tBAM: ${bam_file}\n"
     """
 }
+*/
 
 process log_tool_version_gatk {
     tag { "${params.project_name}.ltVG" }
