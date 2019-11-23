@@ -187,7 +187,7 @@ process run_haplotype_caller_on_x_par2_male {
      if ( params.sample_coverage == "high" )
        call_conf = 30
      else if ( params.sample_coverage == "low" )
-       call_conf = 10a
+       call_conf = 10
      mem = task.memory.toGiga() - 4
      """
      gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g"  \
