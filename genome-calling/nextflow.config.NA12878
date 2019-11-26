@@ -83,4 +83,5 @@ trace {
 singularity {
   autoMounts = true
   enabled = true
+  cacheDir = "${HOME}/.singularity"
 }
