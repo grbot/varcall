@@ -18,6 +18,7 @@ Each folder contains part of the pipeline or scripts to prepare the data for a s
 
 ### Separate pipelines
 * **bam-to-cram** - Need to provide a sample sheet with paths to the BAMs. BAMs are converted to CRAM (v3), indexed, stats are calculated and md5sums are generated.
+* **cram-to-bam** - Need to provide a sample sheet with paths to the CRAMs. CRAMs are converted to BAM, indexed, stats are calculated and md5sums are generated.
 * **cram-to-fastq** - Need to provide a sample sheet with paths to the CRAMs. CRAMs are converted to Fastq (forward and reverse pair).
 * **index-bams** - Need to provide a sample sheet with paths to the BAMs. BAMs are indexed.
 * **filter-vcf** - Filter final VCFs based on the PASS flag in the FILTER column.
