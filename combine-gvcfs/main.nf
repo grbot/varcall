@@ -104,7 +104,7 @@ process run_combine_gvcfs {
     """
 }
 
-cohort_chr_calls.toList().into{ cohort_calls }
+cohort_chr_calls.toList().set{ cohort_calls }
 
 if (params.build == "b37") {
   process run_concat_vcf_build37 {
@@ -114,7 +114,7 @@ if (params.build == "b37") {
        label 'gatk'
   
        input:
-       file(vcf) from concat_ready
+       file(vcf) from cohort_calls 
   
        output:
   	   set file("${params.cohort_id}.vcf.gz"), file("${params.cohort_id}.vcf.gz.tbi") into combined_calls
@@ -165,7 +165,7 @@ if (params.build == "b38") {
        label 'gatk'
   
        input:
-       file(vcf) from concat_ready
+       file(vcf) from cohort_calls
   
        output:
   	   set file("${params.cohort_id}.vcf.gz"), file("${params.cohort_id}.vcf.gz.tbi") into combined_calls
