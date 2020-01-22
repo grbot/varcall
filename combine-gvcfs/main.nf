@@ -152,7 +152,7 @@ if (params.build == "b37") {
        
        gatk --java-options  "-XX:+UseSerialGC -Xms4g -Xmx${mem}g" \
        GatherVcfs \
-       -I ${params.cohort_id}.vcf.list \
+       -I ${params.cohort_id}.g.vcf.list \
        -O ${params.cohort_id}.g.vcf.gz # GatherVCF does not index the gVCF. The gVCF will be indexed in the next tabix operation.
        tabix -p vcf ${params.cohort_id}.g.vcf.gz
        """
