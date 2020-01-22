@@ -30,6 +30,7 @@ ref_seq = Channel.fromPath(params.ref_seq).toList()
 ref_seq_index = Channel.fromPath(params.ref_seq_index).toList()
 ref_seq_dict = Channel.fromPath(params.ref_seq_dict).toList()
 
+/*
 process print_sample_info {
     tag { "${sample_id}" }
     echo true
@@ -42,6 +43,7 @@ process print_sample_info {
     printf "[sample_info] sample: ${sample_id}\tgVCF: ${gvcf_file}\n"
     """
 }
+*/
 
 process log_tool_version_gatk {
     tag { "${params.project_name}.ltVG" }
