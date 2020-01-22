@@ -119,42 +119,42 @@ if (params.build == "b37") {
        file(vcf) from cohort_calls 
   
        output:
-  	   set file("${params.cohort_id}.vcf.gz"), file("${params.cohort_id}.vcf.gz.tbi") into combined_calls
+  	   set file("${params.cohort_id}.g.vcf.gz"), file("${params.cohort_id}.g.vcf.gz.tbi") into combined_calls
   
        script:
          mem = task.memory.toGiga() - 4
        """
-       echo "${vcf.join('\n')}" | grep "\\.1\\.vcf.gz" > ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.2\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.3\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.4\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.5\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.6\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.7\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.8\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.9\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.10\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.11\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.12\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.13\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.14\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.15\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.16\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.17\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.18\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.19\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.20\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.21\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.22\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.X\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.Y\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.MT\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.1\\.g.vcf.gz" > ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.2\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.3\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.4\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.5\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.6\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.7\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.8\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.9\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.10\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.11\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.12\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.13\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.14\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.15\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.16\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.17\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.18\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.19\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.20\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.21\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.22\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.X\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.Y\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.MT\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
        
        gatk --java-options  "-XX:+UseSerialGC -Xms4g -Xmx${mem}g" \
        GatherVcfs \
        -I ${params.cohort_id}.vcf.list \
-       -O ${params.cohort_id}.vcf.gz # GatherVCF does not index the VCF. The VCF will be indexed in the next tabix operation.
-       tabix -p vcf ${params.cohort_id}.vcf.gz
+       -O ${params.cohort_id}.g.vcf.gz # GatherVCF does not index the gVCF. The gVCF will be indexed in the next tabix operation.
+       tabix -p vcf ${params.cohort_id}.g.vcf.gz
        """
   }
 }
@@ -170,42 +170,42 @@ if (params.build == "b38") {
        file(vcf) from cohort_calls
   
        output:
-  	   set file("${params.cohort_id}.vcf.gz"), file("${params.cohort_id}.vcf.gz.tbi") into combined_calls
+  	   set file("${params.cohort_id}.g.vcf.gz"), file("${params.cohort_id}.g.vcf.gz.tbi") into combined_calls
   
        script:
          mem = task.memory.toGiga() - 4
        """
-       echo "${vcf.join('\n')}" | grep "\\.chr1\\.vcf.gz" > ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chr2\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chr3\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chr4\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chr5\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chr6\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chr7\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chr8\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chr9\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chr10\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chr11\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chr12\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chr13\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chr14\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chr15\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chr16\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chr17\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chr18\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chr19\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chr20\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chr21\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chr22\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chrX\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chrY\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chrM\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr1\\.g.vcf.gz" > ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr2\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr3\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr4\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr5\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr6\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr7\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr8\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr9\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr10\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr11\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr12\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr13\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr14\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr15\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr16\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr17\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr18\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr19\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr20\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr21\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr22\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chrX\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chrY\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chrM\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
        
        gatk --java-options  "-XX:+UseSerialGC -Xms4g -Xmx${mem}g" \
        GatherVcfs \
-       -I ${params.cohort_id}.vcf.list \
-       -O ${params.cohort_id}.vcf.gz # GatherVCF does not index the VCF. The VCF will be indexed in the next tabix operation.
-       tabix -p vcf ${params.cohort_id}.vcf.gz
+       -I ${params.cohort_id}.g.vcf.list \
+       -O ${params.cohort_id}.g.vcf.gz # GatherVCF does not index the gVCF. The gVCF will be indexed in the next tabix operation.
+       tabix -p vcf ${params.cohort_id}.g.vcf.gz
        """
   }
 }
