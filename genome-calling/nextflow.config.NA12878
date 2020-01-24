@@ -30,10 +30,10 @@ params{
  
     build = "b37" // or b38
 
-    db = no // if no calling from a combined gvcf
-    db_path = "/" // no need to set if db_impot = no
+    db_import = "no" // if no calling from a combined gvcf
+    db_path = "/" // no need to set if db_import = no
     	
-    gvcf = "/cbio/datasets/human/giab/b37/gvcf/NA12878.g.vcf.gz" // specify if db = yes
+    gvcf = "/cbio/datasets/human/giab/b37/gvcf/NA12878.g.vcf.gz" // specify if db = no
 }
 
 executor{
