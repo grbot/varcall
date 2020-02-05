@@ -14,7 +14,7 @@ process log_tool_version_bcftools {
     tag { "${params.project_name}.ltViB" }
     echo true
     publishDir "${params.out_dir}/${params.cohort_id}/filter-vcf", mode: 'move', overwrite: false
-    label 'gatk'
+    label 'bcftools'
 
     output:
     file("tool.bcftools.version") into tool_version_bcftools
