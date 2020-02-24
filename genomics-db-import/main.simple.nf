@@ -121,7 +121,7 @@ if (db_update == "no"){
       file intervals
   
       output:
-      file("${db}.gdb")  into cohort_chr_calls
+      file("${db}")  into cohort_chr_calls
   
       script:
       mem = task.memory.toGiga() - 32
@@ -133,7 +133,7 @@ if (db_update == "no"){
       GenomicsDBImport \
       --intervals ${intervals} \
       --variant ${gvcf_list} \
-      --genomicsdb-workspace-path ${db}.gdb \
+      --genomicsdb-workspace-path ${db} \
       --batch-size 50 \
       --reader-threads 5 \
      --tmp-dir tmp
@@ -155,7 +155,7 @@ if (db_update == "yes"){
       file intervals 
   
       output:
-      file("${db}.gdb")  into cohort_chr_calls
+      file("${db}")  into cohort_chr_calls
   
       script:
       mem = task.memory.toGiga() - 10
@@ -165,7 +165,7 @@ if (db_update == "yes"){
       GenomicsDBImport \
       --intervals ${intervals} \
       --variant ${gvcf_list} \
-      --genomicsdb-update-workspace-path ${db}.gdb \
+      --genomicsdb-update-workspace-path ${db} \
       --batch-size 50 \
       --reader-threads 5 \
       --tmp-dir tmp
