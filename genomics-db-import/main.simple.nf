@@ -48,9 +48,9 @@ if ( (db_update == "yes") && db.exists() ){
 
 
 if (params.build == "b37") {
-  chroms = "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,X,Y,MT"
+  chroms = "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,X,Y,MT".split(',')
 } else if (params.build == "b38"){
-    chroms = "chr1,chr2,chr3,chr4,chr5,chr6,chr7,chr8,chr9,chr10,chr11,chr12,chr13,chr14,chr15,chr16,chr17,chr18,chr19,chr20,chr21,chr22,chrX,chrY,chrM"
+    chroms = "chr1,chr2,chr3,chr4,chr5,chr6,chr7,chr8,chr9,chr10,chr11,chr12,chr13,chr14,chr15,chr16,chr17,chr18,chr19,chr20,chr21,chr22,chrX,chrY,chrM".split(',')
 } else {
     println "\n============================================================================================="
     println "Please specify a genome build (b37 or b38)!"
@@ -121,7 +121,7 @@ if (db_update == "no"){
       file intervals
   
       output:
-      file("${db}.gdb")  into cohort_chr_calls
+      file("${db}")  into cohort_chr_calls
   
       script:
       mem = task.memory.toGiga() - 32
@@ -133,7 +133,7 @@ if (db_update == "no"){
       GenomicsDBImport \
       --intervals ${intervals} \
       --variant ${gvcf_list} \
-      --genomicsdb-workspace-path ${db}.gdb \
+      --genomicsdb-workspace-path ${db} \
       --batch-size 50 \
       --reader-threads 5 \
      --tmp-dir tmp
@@ -155,7 +155,7 @@ if (db_update == "yes"){
       file intervals 
   
       output:
-      file("${db}.gdb")  into cohort_chr_calls
+      file("${db}")  into cohort_chr_calls
   
       script:
       mem = task.memory.toGiga() - 10
@@ -165,7 +165,7 @@ if (db_update == "yes"){
       GenomicsDBImport \
       --intervals ${intervals} \
       --variant ${gvcf_list} \
-      --genomicsdb-update-workspace-path ${db}.gdb \
+      --genomicsdb-update-workspace-path ${db} \
       --batch-size 50 \
       --reader-threads 5 \
       --tmp-dir tmp
