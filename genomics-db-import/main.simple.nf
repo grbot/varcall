@@ -128,7 +128,7 @@ if (db_update == "no"){
         // We delete the database first if it was created on a failed run. E.g. when memory was to low on previous nextflow process.
       """
       mkdir tmp && \
-      rm -rf ${db}.gdb && \
+      rm -rf ${db}/gdb && \
       gatk --java-options "-XX:+UseSerialGC -Xms4g -Xmx${mem}g"  \
       GenomicsDBImport \
       --intervals ${intervals} \
