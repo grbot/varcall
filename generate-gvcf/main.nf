@@ -461,106 +461,210 @@ process run_haplotype_caller_on_mt {
 
 autosome_calls.mix(mt_calls,x_par1_calls,x_nonpar_calls,x_par2_calls,x_calls,y_par1_calls,y_nonpar_calls,y_par2_calls).groupTuple().set{all_calls}
 
-process combine_gVCFs {
-     tag { "${params.project_name}.${sample_id}.cCgVCF" }
-     memory { 8.GB * task.attempt }
-     label 'gatk'
-     publishDir "${params.out_dir}/${sample_id}", mode: 'copy', overwrite: false
-
-     input:
-     set val(sample_id), file(gvcf) from all_calls
-
-     output:
-	   set val(sample_id), file("${sample_id}.g.vcf.gz") into combine_calls
-	   set val(sample_id), file("${sample_id}.g.vcf.gz.tbi") into combine_calls_indexes
-
-     script:
-     mem = task.memory.toGiga() - 4
-     if (gvcf.size() == 29) // working with a male sample
-     """
-     gatk --java-options "-XX:+UseSerialGC -Xms1g -Xmx${mem}g"  \
-     SortVcf \
-     -I ${sample_id}.X_PAR1.g.vcf.gz \
-     -I ${sample_id}.X_PAR2.g.vcf.gz \
-     -I ${sample_id}.X_nonPAR.g.vcf.gz \
-     -O ${sample_id}.X.g.vcf.gz
-
-     gatk --java-options "-XX:+UseSerialGC -Xms1g -Xmx${mem}g"  \
-     SortVcf \
-     -I ${sample_id}.Y_PAR1.g.vcf.gz \
-     -I ${sample_id}.Y_PAR2.g.vcf.gz \
-     -I ${sample_id}.Y_nonPAR.g.vcf.gz \
-     -O ${sample_id}.Y.g.vcf.gz
-
-     echo "${gvcf.join('\n')}" | grep "\\.1\\.g.vcf.gz" > ${sample_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.2\\.g.vcf.gz" >> ${sample_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.3\\.g.vcf.gz" >> ${sample_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.4\\.g.vcf.gz" >> ${sample_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.5\\.g.vcf.gz" >> ${sample_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.6\\.g.vcf.gz" >> ${sample_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.7\\.g.vcf.gz" >> ${sample_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.8\\.g.vcf.gz" >> ${sample_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.9\\.g.vcf.gz" >> ${sample_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.10\\.g.vcf.gz" >> ${sample_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.11\\.g.vcf.gz" >> ${sample_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.12\\.g.vcf.gz" >> ${sample_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.13\\.g.vcf.gz" >> ${sample_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.14\\.g.vcf.gz" >> ${sample_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.15\\.g.vcf.gz" >> ${sample_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.16\\.g.vcf.gz" >> ${sample_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.17\\.g.vcf.gz" >> ${sample_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.18\\.g.vcf.gz" >> ${sample_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.19\\.g.vcf.gz" >> ${sample_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.20\\.g.vcf.gz" >> ${sample_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.21\\.g.vcf.gz" >> ${sample_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.22\\.g.vcf.gz" >> ${sample_id}.gvcf.list
-     echo ${sample_id}.X.g.vcf.gz >> ${sample_id}.gvcf.list
-     echo ${sample_id}.Y.g.vcf.gz >> ${sample_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.MT\\.g\\.vcf\\.gz" >> ${sample_id}.gvcf.list
-
-     gatk --java-options "-XX:+UseSerialGC -Xms1g -Xmx${mem}g"  \
-     GatherVcfs \
-     -I ${sample_id}.gvcf.list \
-     -O ${sample_id}.g.vcf.gz # GatherVCF does not index the VCF. The VCF will be indexed in the next tabix operation.
-
-     tabix -p vcf ${sample_id}.g.vcf.gz
-     """
-     else if (gvcf.size() == 24) // working with a female  sample
-     """
-     echo "${gvcf.join('\n')}" | grep "\\.1\\.g.vcf.gz" > ${sample_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.2\\.g.vcf.gz" >> ${sample_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.3\\.g.vcf.gz" >> ${sample_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.4\\.g.vcf.gz" >> ${sample_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.5\\.g.vcf.gz" >> ${sample_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.6\\.g.vcf.gz" >> ${sample_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.7\\.g.vcf.gz" >> ${sample_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.8\\.g.vcf.gz" >> ${sample_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.9\\.g.vcf.gz" >> ${sample_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.10\\.g.vcf.gz" >> ${sample_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.11\\.g.vcf.gz" >> ${sample_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.12\\.g.vcf.gz" >> ${sample_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.13\\.g.vcf.gz" >> ${sample_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.14\\.g.vcf.gz" >> ${sample_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.15\\.g.vcf.gz" >> ${sample_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.16\\.g.vcf.gz" >> ${sample_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.17\\.g.vcf.gz" >> ${sample_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.18\\.g.vcf.gz" >> ${sample_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.19\\.g.vcf.gz" >> ${sample_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.20\\.g.vcf.gz" >> ${sample_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.21\\.g.vcf.gz" >> ${sample_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.22\\.g.vcf.gz" >> ${sample_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.X\\.g.vcf.gz" >> ${sample_id}.gvcf.list
-     echo "${gvcf.join('\n')}" | grep "\\.MT\\.g\\.vcf\\.gz" >> ${sample_id}.gvcf.list
-
-     gatk --java-options "-XX:+UseSerialGC -Xms1g -Xmx${mem}g"  \
-     GatherVcfs \
-     -I ${sample_id}.gvcf.list \
-     -O ${sample_id}.g.vcf.gz # GatherVCF does not index the VCF. The VCF will be indexed in the next tabix operation.
-
-     tabix -p vcf ${sample_id}.g.vcf.gz
-     """
+if (params.build == "b37"){
+  process combine_gVCFs_b37 {
+       tag { "${params.project_name}.${sample_id}.cCgVCFb37" }
+       memory { 8.GB * task.attempt }
+       label 'gatk'
+       publishDir "${params.out_dir}/${sample_id}", mode: 'copy', overwrite: false
+  
+       input:
+       set val(sample_id), file(gvcf) from all_calls
+  
+       output:
+  	   set val(sample_id), file("${sample_id}.g.vcf.gz") into combine_calls
+  	   set val(sample_id), file("${sample_id}.g.vcf.gz.tbi") into combine_calls_indexes
+  
+       script:
+       mem = task.memory.toGiga() - 4
+       if (gvcf.size() == 29) // working with a male sample
+       """
+       gatk --java-options "-XX:+UseSerialGC -Xms1g -Xmx${mem}g"  \
+       SortVcf \
+       -I ${sample_id}.X_PAR1.g.vcf.gz \
+       -I ${sample_id}.X_PAR2.g.vcf.gz \
+       -I ${sample_id}.X_nonPAR.g.vcf.gz \
+       -O ${sample_id}.X.g.vcf.gz
+  
+       gatk --java-options "-XX:+UseSerialGC -Xms1g -Xmx${mem}g"  \
+       SortVcf \
+       -I ${sample_id}.Y_PAR1.g.vcf.gz \
+       -I ${sample_id}.Y_PAR2.g.vcf.gz \
+       -I ${sample_id}.Y_nonPAR.g.vcf.gz \
+       -O ${sample_id}.Y.g.vcf.gz
+  
+       echo "${gvcf.join('\n')}" | grep "\\.1\\.g.vcf.gz" > ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.2\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.3\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.4\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.5\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.6\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.7\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.8\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.9\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.10\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.11\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.12\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.13\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.14\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.15\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.16\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.17\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.18\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.19\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.20\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.21\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.22\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo ${sample_id}.X.g.vcf.gz >> ${sample_id}.gvcf.list
+       echo ${sample_id}.Y.g.vcf.gz >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.MT\\.g\\.vcf\\.gz" >> ${sample_id}.gvcf.list
+  
+       gatk --java-options "-XX:+UseSerialGC -Xms1g -Xmx${mem}g"  \
+       GatherVcfs \
+       -I ${sample_id}.gvcf.list \
+       -O ${sample_id}.g.vcf.gz # GatherVCF does not index the VCF. The VCF will be indexed in the next tabix operation.
+  
+       tabix -p vcf ${sample_id}.g.vcf.gz
+       """
+       else if (gvcf.size() == 24) // working with a female  sample
+       """
+       echo "${gvcf.join('\n')}" | grep "\\.1\\.g.vcf.gz" > ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.2\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.3\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.4\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.5\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.6\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.7\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.8\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.9\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.10\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.11\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.12\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.13\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.14\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.15\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.16\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.17\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.18\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.19\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.20\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.21\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.22\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.X\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.MT\\.g\\.vcf\\.gz" >> ${sample_id}.gvcf.list
+  
+       gatk --java-options "-XX:+UseSerialGC -Xms1g -Xmx${mem}g"  \
+       GatherVcfs \
+       -I ${sample_id}.gvcf.list \
+       -O ${sample_id}.g.vcf.gz # GatherVCF does not index the VCF. The VCF will be indexed in the next tabix operation.
+  
+       tabix -p vcf ${sample_id}.g.vcf.gz
+       """
+  }
 }
 
+if (params.build == "b38"){
+  process combine_gVCFs_b38 {
+       tag { "${params.project_name}.${sample_id}.cCgVCFb38" }
+       memory { 8.GB * task.attempt }
+       label 'gatk'
+       publishDir "${params.out_dir}/${sample_id}", mode: 'copy', overwrite: false
+  
+       input:
+       set val(sample_id), file(gvcf) from all_calls
+  
+       output:
+  	   set val(sample_id), file("${sample_id}.g.vcf.gz") into combine_calls
+  	   set val(sample_id), file("${sample_id}.g.vcf.gz.tbi") into combine_calls_indexes
+  
+       script:
+       mem = task.memory.toGiga() - 4
+       if (gvcf.size() == 29) // working with a male sample
+       """
+       gatk --java-options "-XX:+UseSerialGC -Xms1g -Xmx${mem}g"  \
+       SortVcf \
+       -I ${sample_id}.X_PAR1.g.vcf.gz \
+       -I ${sample_id}.X_PAR2.g.vcf.gz \
+       -I ${sample_id}.X_nonPAR.g.vcf.gz \
+       -O ${sample_id}.chrX.g.vcf.gz
+  
+       gatk --java-options "-XX:+UseSerialGC -Xms1g -Xmx${mem}g"  \
+       SortVcf \
+       -I ${sample_id}.Y_PAR1.g.vcf.gz \
+       -I ${sample_id}.Y_PAR2.g.vcf.gz \
+       -I ${sample_id}.Y_nonPAR.g.vcf.gz \
+       -O ${sample_id}.chrY.g.vcf.gz
+  
+       echo "${gvcf.join('\n')}" | grep "\\.chr1\\.g.vcf.gz" > ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.chr2\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.chr3\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.chr4\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.chr5\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.chr6\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.chr7\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.chr8\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.chr9\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.chr10\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.chr11\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.chr12\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.chr13\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.chr14\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.chr15\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.chr16\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.chr17\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.chr18\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.chr19\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.chr20\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.chr21\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.chr22\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo ${sample_id}.chrX.g.vcf.gz >> ${sample_id}.gvcf.list
+       echo ${sample_id}.chrY.g.vcf.gz >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.chrM\\.g\\.vcf\\.gz" >> ${sample_id}.gvcf.list
+  
+       gatk --java-options "-XX:+UseSerialGC -Xms1g -Xmx${mem}g"  \
+       GatherVcfs \
+       -I ${sample_id}.gvcf.list \
+       -O ${sample_id}.g.vcf.gz # GatherVCF does not index the VCF. The VCF will be indexed in the next tabix operation.
+  
+       tabix -p vcf ${sample_id}.g.vcf.gz
+       """
+       else if (gvcf.size() == 24) // working with a female  sample
+       """
+       mv ${sample_id}.X.g.vcf.gz ${sample_id}.chrX.g.vcf.gz
+       echo "${gvcf.join('\n')}" | grep "\\.chr1\\.g.vcf.gz" > ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.chr2\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.chr3\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.chr4\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.chr5\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.chr6\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.chr7\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.chr8\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.chr9\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.chr10\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.chr11\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.chr12\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.chr13\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.chr14\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.chr15\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.chr16\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.chr17\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.chr18\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.chr19\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.chr20\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.chr21\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.chr22\\.g.vcf.gz" >> ${sample_id}.gvcf.list
+       echo ${sample_id}.chrX.g.vcf.gz >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.chrMT\\.g\\.vcf\\.gz" >> ${sample_id}.gvcf.list
+  
+       gatk --java-options "-XX:+UseSerialGC -Xms1g -Xmx${mem}g"  \
+       GatherVcfs \
+       -I ${sample_id}.gvcf.list \
+       -O ${sample_id}.g.vcf.gz # GatherVCF does not index the VCF. The VCF will be indexed in the next tabix operation.
+  
+       tabix -p vcf ${sample_id}.g.vcf.gz
+       """
+  }
+}
 workflow.onComplete {
 
     println ( workflow.success ? """
