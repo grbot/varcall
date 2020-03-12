@@ -176,6 +176,7 @@ process run_create_recalibration_table {
 process run_recalibrate_bam {
     tag { "${params.project_name}.${sample_id}.rRB" }
     memory { 16.GB * task.attempt }
+    cpus { 2 }
     publishDir "${params.out_dir}/${sample_id}", mode: 'symlink', overwrite: false
     label 'gatk'
 
