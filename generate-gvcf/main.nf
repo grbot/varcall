@@ -455,7 +455,7 @@ process run_haplotype_caller_on_mt {
     -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
     -stand-call-conf ${call_conf} \
     --sample-ploidy 2 \
-    -O ${sample_id}.MT.g.vcf.gz
+    -O ${sample_id}.${mt}.g.vcf.gz
     """
 }
 
