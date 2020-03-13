@@ -654,7 +654,7 @@ if (params.build == "b38"){
        echo "${gvcf.join('\n')}" | grep "\\.chr21\\.g.vcf.gz" >> ${sample_id}.gvcf.list
        echo "${gvcf.join('\n')}" | grep "\\.chr22\\.g.vcf.gz" >> ${sample_id}.gvcf.list
        echo ${sample_id}.chrX.g.vcf.gz >> ${sample_id}.gvcf.list
-       echo "${gvcf.join('\n')}" | grep "\\.chrMT\\.g\\.vcf\\.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.chrM\\.g\\.vcf\\.gz" >> ${sample_id}.gvcf.list
   
        gatk --java-options "-XX:+UseSerialGC -Xms1g -Xmx${mem}g"  \
        GatherVcfs \
