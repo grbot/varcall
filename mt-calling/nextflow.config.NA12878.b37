@@ -1,0 +1,69 @@
+params{
+  project_name = "GAPW"
+  sample_sheet = "/users/gerrit/projects/gapw/varcall/mt-calling/NA12878.samplesheet.tsv"
+  sample_coverage = "high"
+  out_dir = "/cbio/users/gerrit/projects/gapw/nextflow-out"
+
+  // GATK specific settings
+  ref_seq = "/cbio/dbs/gatk/2.8/b37/human_g1k_v37_decoy.fasta"
+  ref_seq_index = "/cbio/dbs/gatk/2.8/b37/human_g1k_v37_decoy.fasta.fai"
+  ref_seq_dict = "/cbio/dbs/gatk/2.8/b37/human_g1k_v37_decoy.dict"
+  dbsnp = "/cbio/dbs/gatk/2.8/b37/dbsnp_138.b37.vcf"
+  dbsnp_index = "/cbio/dbs/gatk/2.8/b37/dbsnp_138.b37.vcf.idx"
+  
+}
+
+process{
+
+    cache = true
+
+    withLabel: gatk {
+         container = 'docker://broadinstitute/gatk:4.1.3.0'
+    }
+
+    withLabel: bcftools {
+         container = 'docker://quay.io/grbot/bcftools'
+    }
+
+    cpus = 1
+    memory = 4.GB
+    time = 96.h
+    errorStrategy = 'retry'
+    maxRetries = 5
+    maxErrors = 1000
+}
+
+executor{
+    jobName = { "$task.tag" }
+    queueSize = 100
+    submitRateLimit = '10 min' // submit 10 jobs per minute
+}
+
+profiles {
+    standard {
+        process.executor = 'local'
+    }
+    ilifu {
+        process.executor = 'slurm'
+        process.queue = 'Main'
+    }
+    wits {
+        process.executor = 'slurm'
+        process.queue = 'batch'
+    }
+    cbio {
+         process.executor = 'pbs'
+         process.queue = 'dev'
+    }
+
+}
+
+trace {
+    enabled = true
+    file = "${params.project_name}.trace.txt"
+}
+
+singularity {
+  autoMounts = true
+  enabled = true
+}
