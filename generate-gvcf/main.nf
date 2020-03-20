@@ -75,7 +75,7 @@ process log_tool_version_gatk {
 
 process run_haplotype_caller_on_autosomes {
     tag { "${params.project_name}.${sample_id}.${chr}.rHCoA" }
-    memory { 8.GB * task.attempt }
+    memory { 12.GB * task.attempt }
     cpus { 2 }
     label 'gatk'
     publishDir "${params.out_dir}/${sample_id}", mode: 'copy', overwrite: false
