@@ -433,8 +433,8 @@ process run_haplotype_caller_on_mt {
     file (dbsnp_index)
 
     output:
-	  set val(sample_id), file("${sample_id}.MT.g.vcf.gz") into mt_calls
-	  set val(sample_id), file("${sample_id}.MT.g.vcf.gz.tbi") into mt_calls_indexes
+	  set val(sample_id), file("${sample_id}.${mt}.g.vcf.gz") into mt_calls
+	  set val(sample_id), file("${sample_id}.${mt}.g.vcf.gz.tbi") into mt_calls_indexes
 
     script:
     call_conf = 30 // set default
