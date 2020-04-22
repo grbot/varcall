@@ -21,8 +21,12 @@ Each folder contains part of the pipeline or scripts to prepare the data for a s
 * **cram-to-bam** - Need to provide a sample sheet with paths to the CRAMs. CRAMs are converted to BAM, indexed, stats are calculated and md5sums are generated.
 * **cram-to-fastq** - Need to provide a sample sheet with paths to the CRAMs. CRAMs are converted to Fastq (forward and reverse pair).
 * **index-bams** - Need to provide a sample sheet with paths to the BAMs. BAMs are indexed.
+* **index-vcf** - Need to provide a sample sheet with paths to the VCFs/gVCFs. VCFs/gVCFs are indexed.
 * **filter-vcf** - Filter final VCFs based on the PASS flag in the FILTER column.
 * **bam-flagstat** - Need to provide a sample sheet with paths to the BAMs/CRAMs. Flagstat reporsts are created.
+* **mt-calling** - Need to provide a samples sheet with paths to BAMs/CRAMs. Mitochondrial variant calling are doen with the Mutect2 pipeline.
+* **combine-lanes** - Need to provide a samplesheet to directories with the multi-lane BAMs. BAMs are merged and indexed.
+* **validate-gvcf** - Need to provide a samplesheet with path to gVCFs and gender info. gVCF validation are done on chromosome level using GATK's ValidateVariants. 
 
 ## Note
 * The main pipeline can be followed for a single sample or joint calling sample. For a single sample the **combine-gvcfs` or `genomics-db-import` can be skipped and the `genome-calling` configs can point to single sample `.g.vcf`.
@@ -44,4 +48,8 @@ wget -O NA12878_R2.fastq.gz ftp://ftp-trace.ncbi.nih.gov/giab/ftp/data/NA12878/G
 - [x] **index-bams**
 - [x] **filter-vcf**
 - [x] **bam-flagstat**
+- [x] **index-vcf**
+- [x] **mt-calling**
+- [x] **combine-lanes**
+- [x] **validate-gvcf**
 
