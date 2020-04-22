@@ -1,6 +1,6 @@
 # Intro
 
-The repos contains individual pipelines to process large cohorts of human genome samples through alignment, calling, joint calling and variant quality score recalibration.
+The repos contains individual pipelines to process cohorts of human genome samples through alignment, calling, joint calling and variant quality score recalibration. Some additional pipelines for pre and post BAM/gVCF manipulation/checking are also included.
 
 ## To run
 
@@ -29,7 +29,7 @@ Each folder contains part of the pipeline or scripts to prepare the data for a s
 * **validate-gvcf** - Need to provide a samplesheet with path to gVCFs and gender info. gVCF validation are done on chromosome level using GATK's ValidateVariants. 
 
 ## Note
-* The main pipeline can be followed for a single sample or joint calling sample. For a single sample the **combine-gvcfs` or `genomics-db-import` can be skipped and the `genome-calling` configs can point to single sample `.g.vcf`.
+* The main pipeline can be followed for a single sample or joint calling sample. For a single sample the **combine-gvcfs** or **genomics-db-import** can be skipped and the **genome-calling** configs can point to single sample `.g.vcf`.
 
 ## Example
 The GiaB dataset can be downloaded and used for testing
