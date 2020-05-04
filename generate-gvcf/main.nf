@@ -75,7 +75,7 @@ process log_tool_version_gatk {
 
 process run_haplotype_caller_on_autosomes {
     tag { "${params.project_name}.${sample_id}.${chr}.rHCoA" }
-    memory { 8.GB * task.attempt }
+    memory { 12.GB * task.attempt }
     cpus { 2 }
     label 'gatk'
     publishDir "${params.out_dir}/${sample_id}", mode: 'copy', overwrite: false
@@ -433,8 +433,8 @@ process run_haplotype_caller_on_mt {
     file (dbsnp_index)
 
     output:
-	  set val(sample_id), file("${sample_id}.MT.g.vcf.gz") into mt_calls
-	  set val(sample_id), file("${sample_id}.MT.g.vcf.gz.tbi") into mt_calls_indexes
+	  set val(sample_id), file("${sample_id}.${mt}.g.vcf.gz") into mt_calls
+	  set val(sample_id), file("${sample_id}.${mt}.g.vcf.gz.tbi") into mt_calls_indexes
 
     script:
     call_conf = 30 // set default
@@ -455,7 +455,7 @@ process run_haplotype_caller_on_mt {
     -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
     -stand-call-conf ${call_conf} \
     --sample-ploidy 2 \
-    -O ${sample_id}.MT.g.vcf.gz
+    -O ${sample_id}.${mt}.g.vcf.gz
     """
 }
 
@@ -654,7 +654,7 @@ if (params.build == "b38"){
        echo "${gvcf.join('\n')}" | grep "\\.chr21\\.g.vcf.gz" >> ${sample_id}.gvcf.list
        echo "${gvcf.join('\n')}" | grep "\\.chr22\\.g.vcf.gz" >> ${sample_id}.gvcf.list
        echo ${sample_id}.chrX.g.vcf.gz >> ${sample_id}.gvcf.list
-       echo "${gvcf.join('\n')}" | grep "\\.chrMT\\.g\\.vcf\\.gz" >> ${sample_id}.gvcf.list
+       echo "${gvcf.join('\n')}" | grep "\\.chrM\\.g\\.vcf\\.gz" >> ${sample_id}.gvcf.list
   
        gatk --java-options "-XX:+UseSerialGC -Xms1g -Xmx${mem}g"  \
        GatherVcfs \

@@ -6,7 +6,16 @@ params{
 
   // GATK specific settings
   ref_seq = "/cbio/dbs/gatk/hg38/Homo_sapiens_assembly38.fasta"
-  dbsnp_sites = "/cbio/dbs/gatk/hg38/dbsnp_146.hg38.vcf.gz"
+  ref_seq_index = "/cbio/dbs/gatk/hg38/Homo_sapiens_assembly38.fasta.fai"
+  ref_seq_dict = "/cbio/dbs/gatk/hg38/Homo_sapiens_assembly38.dict"
+  ref_seq_amb = "/cbio/dbs/gatk/hg38/Homo_sapiens_assembly38.fasta.64.amb"
+  ref_seq_ann = "/cbio/dbs/gatk/hg38/Homo_sapiens_assembly38.fasta.64.ann"
+  ref_seq_bwt = "/cbio/dbs/gatk/hg38/Homo_sapiens_assembly38.fasta.64.bwt"
+  ref_seq_pac = "/cbio/dbs/gatk/hg38/Homo_sapiens_assembly38.fasta.64.pac"
+  ref_seq_sa = "/cbio/dbs/gatk/hg38/Homo_sapiens_assembly38.fasta.64.sa"
+  dbsnp = "/cbio/dbs/gatk/hg38/dbsnp_146.hg38.vcf.gz"
+  dbsnp_index = "/cbio/dbs/gatk/hg38/dbsnp_146.hg38.vcf.gz.tbi"
+
 
   build = "b38"
 
