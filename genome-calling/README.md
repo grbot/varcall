@@ -19,3 +19,7 @@ The output directory will contain
 1. A per autosome and X, Y and MT VCF file
 1. A recalibrated SNP genome VCF file
 1. A recalibrated SNP and INDEL genome VCF file
+
+## Reasons for different `main.*`
+- `main.nf` - GenotypeGVCFs in parallel per chromosome and VQSR on whole genome
+- `main.intervals.nf` - GenotypeGVCFs in parallel per intervals (on GenomicsDB) and VQSR on whole genome
