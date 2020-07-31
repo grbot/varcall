@@ -53,13 +53,13 @@ process index_bam {
     set val(sample_id), file(bam_file) from bam_file_1
 
     output:
-    set val(sample_id), file("${bam_file}.bai") into bam_index
+    set val(sample_id), file("${sample_id}.bai") into bam_index
 
 
     script:
     """
     samtools index  \
-    ${bam_file} ${bam_file}.bai
+    ${bam_file} ${sample_id}.bai
     """
 }
     
