@@ -105,7 +105,8 @@ process create_variant_list {
 if (db_update == "no"){
   process run_genomics_db_import_new {
       tag { "${params.project_name}.${chr}.rGDIN" }
-      memory { 24.GB * task.attempt }  
+      // memory { 24.GB * task.attempt }  
+      memory { 230.GB * task.attempt }  
       publishDir "${params.out_dir}/genomics-db-import", mode: 'symlink', overwrite: false
       label 'gatk'
   
@@ -118,7 +119,7 @@ if (db_update == "no"){
       file("${db}/${chr}.gdb")  into cohort_chr_calls
   
       script:
-      mem = task.memory.toGiga() - 10
+      mem = task.memory.toGiga() - 32
         // We delete the database first if it was created on a failed run. E.g. when memory was to low on previous nextflow process.
       """
       rm -rf ${db}/${chr}.gdb && \
