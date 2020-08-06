@@ -79,7 +79,8 @@ process create_variant_list {
 
 process run_combine_gvcfs {
     tag { "${params.project_name}.${chr}.rCG" }
-    memory { 16.GB * task.attempt } 
+    // memory { 232.GB * task.attempt } 
+    memory { 232.GB } 
     publishDir "${params.out_dir}/combine-gvcfs", mode: 'copy', overwrite: false
     label 'gatk'
     
