@@ -95,7 +95,7 @@ process run_bwa {
     
     script:
     
-    if(lane == 0) {
+    if(lane == "0") {
         sample_id = "$sample_id"
     } else {
 	sample_id = "$sample_id-${flowcell}.${lane}"
