@@ -8,7 +8,9 @@ Channel.fromPath( file(params.sample_sheet) )
             def sample_id = row['SampleID']
             def fastq_r1_file = file(row['FastqR1'])
             def fastq_r2_file = file(row['FastqR2'])
-            return [ sample_id, fastq_r1_file, fastq_r2_file ]
+            def flowcell = row['Flowcell']
+            def lane = row['Lane']
+            return [ sample_id, fastq_r1_file, fastq_r2_file, flowcell, lane ]
         }.into{samples_1; samples_2; samples_3; samples_4; samples_5}
 
 ref_seq = Channel.fromPath(params.ref_seq).toList()
@@ -31,10 +33,10 @@ process print_sample_info {
     tag { "${sample_id}" }
     echo true
     input:
-    set val(sample_id), file(fastq_r1_file), file(fastq_r2_file) from samples_1
+    set val(sample_id), file(fastq_r1_file), file(fastq_r2_file), val(flowcell), val(lane) from samples_1
     script:
     """
-    printf "[sample_info] sample: ${sample_id}\tFastqR1: ${fastq_r1_file}\tFastqR2: ${fastq_r2_file}\n"
+    printf "[sample_info] sample: ${sample_id}\tFastqR1: ${fastq_r1_file}\tFastqR2: ${fastq_r2_file}\tFlowcell: ${flowcell}\tLane: ${lane}\n"
     """
 }
 */
@@ -79,7 +81,7 @@ process run_bwa {
     label 'bwa_samtools'
 
     input:
-    set val(sample_id), file(fastq_r1_file), file(fastq_r2_file) from samples_2
+    set val(sample_id), file(fastq_r1_file), file(fastq_r2_file), val(flowcell), val(lane) from samples_2
     file (ref) from ref_seq
     file (ref_index) from ref_seq_index
     file (ref_amb) from ref_seq_amb
@@ -89,11 +91,19 @@ process run_bwa {
     file (ref_sa) from ref_seq_sa
 
     output:
-    set val(sample_id), file("${sample_id}.bam")  into raw_bam
-
+    set val("$sample_id"), file("${sample_id}.bam")  into raw_bam
+    
     script:
+    
+    if(lane == 0) {
+        sample_id = "$sample_id"
+    } else {
+	sample_id = "$sample_id-${flowcell}.${lane}"
+    }
+   
     nr_threads = task.cpus - 1
-    readgroup_info="@RG\\tID:$sample_id.0\\tLB:LIBA\\tSM:$sample_id\\tPL:Illumina"
+    
+    readgroup_info="@RG\\tID:$flowcell.$lane\\tLB:LIBA\\tSM:$sample_id\\tPL:Illumina"
     """
     bwa mem \
     -R \"${readgroup_info}\" \

@@ -6,15 +6,17 @@ Please see `nextflow.conf` for bwa, samtools and GATK and Docker/Singularity ver
 
 ## Sample sheet format
 
-Below is the sample sheet format. The sample sheet should be a tab delimited text file and should be specified in `nextflow.config`.  For the alignment run, SampleID, FastqR1 and FastqR2 columns are required.
+Below is the sample sheet format. The sample sheet should be a tab delimited text file and should be specified in `nextflow.config`.  For the alignment run, SampleID, FastqR1, FastqR2, Flowcell and Lane columns are required.
 
 - FastqR1 and FastqR2 should contain the full path to the sample Fastq reads.
+- Flowcell should contain the flowcell id
+- Lane should contain the lane id. **Note** if the lane id = 0, we assume a sample that was sequenced across lanes. The BAM/CRAM naming in this case would be e.g. `sample_id.bam` where in cases where you have multiple lane sequenced data your BAM/CRAM naming would be `sample_id-flowcell.id.bam` 
 - All collumns not used in this step (Gender, BAM, gVCF) should be filled in with a "."
 
 
-| SampleID | Gender | FastqR1 | FastqR2 | BAM | gVCF |
-| -------- | ------ | ------- | ------- | --- | ---- |
-| A01      | .      | /pathto/A01_R1.fastq.gz       | /pathto/A01_R2.fastq.gz       | .   | . |
+| SampleID | Gender | FastqR1 | FastqR2 | Flowcell | Lane | BAM | gVCF |
+| -------- | ------ | ------- | ------- | -------- | ---- | --- | --- |
+| A01      | .      | /pathto/A01_R1.fastq.gz       | /pathto/A01_R2.fastq.gz  | HHTN2BBXX |  6 | .  | . |
 
 ## Examples
 
@@ -32,7 +34,7 @@ nextflow -log nextflow.log run -w /spaces/gerrit/projects/1kg/datasets/NA12878/n
 
 ## Output
 
-The output directory will contain per sample directories. Each sample directory will contain
+The output directory will contain per sample directories. Each sample directory will contain (Naming will differ depending on the type of lane sequencing that were done, see discussion above on lane)
 
 1. `NA12878.bam` - BAM file after BWA alignment (soft linked)
 2. `NA12878.md.bam` - BAM file after running MarkDuplicates (soft linked)
