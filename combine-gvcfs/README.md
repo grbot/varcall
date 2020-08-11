@@ -12,7 +12,7 @@ Below is the sample sheet format. The sample sheet should be a tab delimmted tex
 
 | SampleID | Gender | FastqR1 | FastqR2 | BAM | gVCF |
 | -------- | ------ | ------- | ------- | --- | ---- |
-| A01      | F      | .       | .       | .   | /pathto/A01.g.vcf.gz |
+| A01      | .      | .       | .       | .   | /pathto/A01.g.vcf.gz |
 
 
 ## To run
