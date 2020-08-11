@@ -94,6 +94,8 @@ process run_bwa {
     set val("$sample_id"), file("${sample_id}.bam")  into raw_bam
     
     script:
+   
+    readgroup_info="@RG\\tID:$flowcell.$lane\\tLB:LIBA\\tSM:$sample_id\\tPL:Illumina"
     
     if(lane == "0") {
         sample_id = "$sample_id"
@@ -103,7 +105,6 @@ process run_bwa {
    
     nr_threads = task.cpus - 1
     
-    readgroup_info="@RG\\tID:$flowcell.$lane\\tLB:LIBA\\tSM:$sample_id\\tPL:Illumina"
     """
     bwa mem \
     -R \"${readgroup_info}\" \
