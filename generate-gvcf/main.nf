@@ -574,8 +574,7 @@ if (params.build == "b38"){
        set val(sample_id), file(gvcf) from all_calls
   
        output:
-  	   set val(sample_id), file("${sample_id}.g.vcf.gz") into combine_calls
-  	   set val(sample_id), file("${sample_id}.g.vcf.gz.tbi") into combine_calls_indexes
+  	   set val(sample_id), file("${sample_id}.g.vcf.gz"), file("${sample_id}.g.vcf.gz.tbi" into combine_calls
   
        script:
        mem = task.memory.toGiga() - 4
@@ -665,6 +664,25 @@ if (params.build == "b38"){
        """
   }
 }
+
+process create_gvcf_md5sum {
+    tag { "${params.project_name}.${sample_id}.cGMD5" }
+    memory { 4.GB * task.attempt }
+    publishDir "${params.out_dir}/${sample_id}", mode: 'move', overwrite: false
+    input:
+    set val(sample_id), file(gvcf), file(gvcf_index) from combine_calls 
+
+    output:
+    set val(sample_id), file("${gvcf}.md5"), file("${gvcf_index}.md5") into gvcf_md5sum
+
+    script:
+    """
+    md5sum ${gvcf} > ${gvcf}.md5
+    md5sum ${gvcf_index} > ${gvcf_index}.md5
+    """
+}
+
+
 workflow.onComplete {
 
     println ( workflow.success ? """
