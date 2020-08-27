@@ -40,7 +40,7 @@ process merge_bams {
     """
     samtools merge \
     ${bam_dir.baseName}.bam \
-    ${bam_dir}/*
+    ${bam_dir}/*.cram
     """
 }
 
