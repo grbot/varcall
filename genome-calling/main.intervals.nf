@@ -56,7 +56,8 @@ process run_genotype_gvcf_on_genome_db {
     memory { 48.GB * task.attempt }  
     publishDir "${params.out_dir}/${params.cohort_id}/genome-calling", mode: 'copy', overwrite: false
     label 'gatk'
-  
+    time = 24.h
+ 
     input:
     file ref_seq
     file ref_seq_index
@@ -143,7 +144,7 @@ process run_vqsr_on_snps {
     memory { 16.GB * task.attempt }  
     publishDir "${params.out_dir}/${params.cohort_id}/genome-calling", mode: 'copy', overwrite: false
     label 'gatk'
-    
+    time = 336.h    
     input:
     set file(vcf), file(vcf_index) from combined_calls
     file ref_seq
@@ -191,7 +192,8 @@ process run_apply_vqsr_on_snps {
     memory { 16.GB * task.attempt }  
     publishDir "${params.out_dir}/${params.cohort_id}/genome-calling", mode: 'copy', overwrite: false
     label 'gatk'
-    
+    time = 336.h    
+   
     input:
     set file(vcf), file(vcf_index), file(snp_recal), file(snp_recal_index), file(snp_tranches) from snps_vqsr_recal
     file ref_seq
@@ -221,6 +223,7 @@ process run_vqsr_on_indels {
     memory { 16.GB * task.attempt }  
     publishDir "${params.out_dir}/${params.cohort_id}/genome-calling", mode: 'copy', overwrite: false
     label 'gatk'
+    time = 336.h    
     
     input:
     set file(vcf), file(vcf_index) from snps_vqsr_vcf
@@ -263,6 +266,7 @@ process run_apply_vqsr_on_indels {
     memory { 16.GB * task.attempt }  
     publishDir "${params.out_dir}/${params.cohort_id}/genome-calling", mode: 'copy', overwrite: false
     label 'gatk'
+    time = 336.h    
 
     input:
     set file(vcf), file(vcf_index), file(indel_recal), file(indel_recal_index), file(indel_tranches) from indel_vqsr_recal
