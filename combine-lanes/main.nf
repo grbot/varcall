@@ -38,9 +38,15 @@ process merge_bams {
 
     script:
     """
+    export REF_PATH=/cbio/dbs/gatk/hg38/cram/%2s/%2s/%s:http://www.ebi.ac.uk/ena/cram/md5/%s
+    export REF_CACHE=/cbio/dbs/gatk/hg38/cram/%2s/%2s/%s
     samtools merge \
     ${bam_dir.baseName}.bam \
     ${bam_dir}/*.cram
+    samtools sort \
+    ${bam_dir.baseName}.bam \
+    -o ${bam_dir.baseName}.sorted.bam
+    mv ${bam_dir.baseName}.sorted.bam ${bam_dir.baseName}.bam
     """
 }
 
