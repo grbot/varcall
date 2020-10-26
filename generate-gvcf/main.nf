@@ -574,7 +574,7 @@ if (params.build == "b38"){
        set val(sample_id), file(gvcf) from all_calls
   
        output:
-  	   set val(sample_id), file("${sample_id}.g.vcf.gz"), file("${sample_id}.g.vcf.gz.tbi" into combine_calls
+  	   set val(sample_id), file("${sample_id}.g.vcf.gz"), file("${sample_id}.g.vcf.gz.tbi") into combine_calls
   
        script:
        mem = task.memory.toGiga() - 4
