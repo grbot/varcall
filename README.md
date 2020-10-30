@@ -27,6 +27,7 @@ Each folder contains part of the pipeline or scripts to prepare the data for a s
 * **mt-calling** - Need to provide a samples sheet with paths to BAMs/CRAMs. Mitochondrial variant calling are doen with the Mutect2 pipeline.
 * **combine-lanes** - Need to provide a samplesheet to directories with the multi-lane BAMs. BAMs are merged and indexed.
 * **validate-gvcf** - Need to provide a samplesheet with path to gVCFs and gender info. gVCF validation are done on chromosome level using GATK's ValidateVariants. 
+* **genotype-refinement** - Need to provide a path to the VQSRed VCF. Genotype Refinment are done on chromosome level using GATK's CalculateGenotypePosteriors, VariantFiltration and VariantAnnotator. 
 
 ## Note
 * The main pipeline can be followed for a single sample or joint calling sample. For a single sample the **combine-gvcfs** or **genomics-db-import** can be skipped and the **genome-calling** configs can point to single sample `.g.vcf`.
@@ -52,4 +53,5 @@ wget -O NA12878_R2.fastq.gz ftp://ftp-trace.ncbi.nih.gov/giab/ftp/data/NA12878/G
 - [x] **mt-calling**
 - [x] **combine-lanes**
 - [x] **validate-gvcf**
+- [x] **genotype-refinement**
 
