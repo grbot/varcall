@@ -38,20 +38,3 @@ The GiaB dataset can be downloaded and used for testing
 wget -O NA12878_R1.fastq.gz ftp://ftp-trace.ncbi.nih.gov/giab/ftp/data/NA12878/Garvan_NA12878_HG001_HiSeq_Exome/NIST7035_TAAGGCGA_L001_R1_001.fastq.gz
 wget -O NA12878_R2.fastq.gz ftp://ftp-trace.ncbi.nih.gov/giab/ftp/data/NA12878/Garvan_NA12878_HG001_HiSeq_Exome/NIST7035_TAAGGCGA_L001_R2_001.fastq.gz
 ```
-## Tested on Ilifu SLURM cluster
-- [x] **align**
-- [x] **generate-gvcf**
-- [x] **combine-gvcf**
-- [x] **genomics-db-import**
-- [x] **genome-calling**
-- [x] **cram-to-fastq**
-- [x] **bam-to-cram**
-- [x] **index-bams**
-- [x] **filter-vcf**
-- [x] **bam-flagstat**
-- [x] **index-vcf**
-- [x] **mt-calling**
-- [x] **combine-lanes**
-- [x] **validate-gvcf**
-- [x] **genotype-refinement**
-
