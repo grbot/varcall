@@ -1,14 +1,18 @@
 params{
   project_name = "ri"
   cohort_id =  "v4"
-  out_dir = "/cbio/users/gerrit/projects/refimpute/b37-panel1/nextflow-out-genotype-refinement"
-  vcf = "/cbio/projects/001/ref-panels/v4/v4.recal-SNP.recal-INDEL.filter-pass.vcf.gz"
-  vcf_index = "/cbio/projects/001/ref-panels/v4/v4.recal-SNP.recal-INDEL.filter-pass.vcf.gz.tbi"
+  // out_dir = "/cbio/users/gerrit/projects/refimpute/b37-panel1/nextflow-out-genotype-refinement"
+  out_dir = "/scratch2/users/gerrit/scratch/nextflow-out-genotype-refinement"
+  vcf = "/cbio/projects/001/ref-panels/v4/filter-vcf-vqsr/v4.recal-SNP.recal-INDEL.filter-pass.vcf.gz"
+  vcf_index = "/cbio/projects/001/ref-panels/v4/filter-vcf-vqsr/v4.recal-SNP.recal-INDEL.filter-pass.vcf.gz.tbi"
 
   // GATK specific settings
   ref_seq = "/cbio/dbs/gatk/2.8/b37/human_g1k_v37_decoy.fasta"
   ref_seq_index = "/cbio/dbs/gatk/2.8/b37/human_g1k_v37_decoy.fasta.fai"
   ref_seq_dict = "/cbio/dbs/gatk/2.8/b37/human_g1k_v37_decoy.dict"
+
+  supporting = "/cbio/dbs/gatk/2.8/b37/1000G_phase1.snps.high_confidence.b37.vcf" // call set to be used in generating genotype posterior, if not generate from data
+  family = "" // specify ped file here
 
   build = "b37"
 }

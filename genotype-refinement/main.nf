@@ -31,6 +31,16 @@ process log_tool_version_gatk {
     """
 }
 
+if (params.supporting)
+  supporting = "-supporting " + params.supporting
+else
+  supporting = ""
+
+if (params.family)
+  family = "-family " +  params.family
+else
+  family = ""
+
 Channel.from( file(params.vcf) )
         .set{ vcf_ch }
 Channel.from( file(params.vcf_index) )
@@ -57,7 +67,7 @@ process run_calculate_genotype_posteriors {
        mem = task.memory.toGiga() - 4
     """
     gatk --java-options  "-XX:+UseSerialGC -Xms4g -Xmx${mem}g" \
-    CalculateGenotypePosteriors  \
+    CalculateGenotypePosteriors ${supporting} ${family} \
    -R ${ref_seq} \
    -L ${chr} \
    -V ${vcf} \
