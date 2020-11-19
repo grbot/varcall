@@ -37,7 +37,7 @@ else
   supporting = ""
 
 if (params.family)
-  family = "-family " +  params.family
+  family = "-ped " +  params.family
 else
   family = ""
 
