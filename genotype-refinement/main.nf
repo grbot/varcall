@@ -173,9 +173,9 @@ if (params.build == "b37") {
        echo "${vcf.join('\n')}" | grep "\\.20\\.vcf.gz" >> ${params.cohort_id}.vcf.list
        echo "${vcf.join('\n')}" | grep "\\.21\\.vcf.gz" >> ${params.cohort_id}.vcf.list
        echo "${vcf.join('\n')}" | grep "\\.22\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.X\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.Y\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.MT\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list 
+       echo "${vcf.join('\n')}" | grep "\\.X\\.g.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.Y\\.g.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.MT\\.g.vcf.gz" >> ${params.cohort_id}.vcf.list 
        gatk --java-options  "-XX:+UseSerialGC -Xms4g -Xmx${mem}g" \
        GatherVcfs \
        -I ${params.cohort_id}.vcf.list \
@@ -223,9 +223,9 @@ if (params.build == "b38") {
        echo "${vcf.join('\n')}" | grep "\\.chr20\\.vcf.gz" >> ${params.cohort_id}.vcf.list
        echo "${vcf.join('\n')}" | grep "\\.chr21\\.vcf.gz" >> ${params.cohort_id}.vcf.list
        echo "${vcf.join('\n')}" | grep "\\.chr22\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chrX\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chrY\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chrM\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chrX\\.g.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chrY\\.g.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chrM\\.g.vcf.gz" >> ${params.cohort_id}.vcf.list
        
        gatk --java-options  "-XX:+UseSerialGC -Xms4g -Xmx${mem}g" \
        GatherVcfs \
