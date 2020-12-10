@@ -142,8 +142,8 @@ process run_concat_vcf{
      file vcf_list
 
      output:
-	   set file("${params.cohort_id}.vcf.gz") into concat_vcf
-	   set file("${params.cohort_id}.vcf.gz.tbi") into concat_vcf_index
+	   file("${params.cohort_id}.vcf.gz") into vcf_concat
+	   file("${params.cohort_id}.vcf.gz.tbi") into vcf_concat_index
 
      script:
        mem = task.memory.toGiga() - 4
@@ -171,7 +171,7 @@ process run_select_chromosomes {
     each chr from chroms
 
     output:
-    set chr, file("${params.cohort_id}.${chr}.vcf.gz"), file("${params.cohort_id}.${chr}.vcf.gz.tbi") into gg_vcf
+    set chr, file("${params.cohort_id}.${chr}.vcf.gz"), file("${params.cohort_id}.${chr}.vcf.gz.tbi") into chr_vcf
 
     script:
     """
@@ -192,7 +192,7 @@ process run_vqsr_on_snps {
     label 'gatk'
     time = 336.h    
     input:
-    set chr, file(vcf), file(vcf_index) from gg_vcf
+    set chr, file(vcf), file(vcf_index) from chr_vcf
     file ref_seq
     file ref_seq_index
     file ref_seq_dict
