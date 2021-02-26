@@ -68,11 +68,7 @@ process run_calculate_genotype_posteriors {
        mem = task.memory.toGiga() - 4
     """
     gatk --java-options  "-XX:+UseSerialGC -Xms4g -Xmx${mem}g" \
-<<<<<<< HEAD
-    CalculateGenotypePosteriors  \
-=======
     CalculateGenotypePosteriors ${supporting} ${family} \
->>>>>>> 8b6e571682f12937d699f828d03e3b04279b8783
    -R ${ref_seq} \
    -L ${chr} \
    -V ${vcf} \
