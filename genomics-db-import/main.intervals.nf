@@ -69,7 +69,7 @@ process create_variant_list {
 
 process run_genomics_db_import_new {
     tag { "${params.project_name}.${interval}.rGDIN" }
-    memory { 10.GB }  
+    memory { 16.GB }  
     cpus { 5 }
     publishDir "${params.out_dir}/genomics-db-import", mode: 'copy', overwrite: false
     label 'gatk'
