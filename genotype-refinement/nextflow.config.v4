@@ -1,21 +1,26 @@
 params{
-  project_name = "project"
-  sample_sheet = "/path-to-samplesheet"
-  out_dir = "/path-to-output-dir"
+  project_name = "ri"
+  cohort_id =  "v4"
+  out_dir = "/cbio/users/gerrit/projects/refimpute/b37-panel1/nextflow-out-genotype-refinement"
+  vcf = "/cbio/projects/001/ref-panels/v4/v4.recal-SNP.recal-INDEL.filter-pass.vcf.gz"
+  vcf_index = "/cbio/projects/001/ref-panels/v4/v4.recal-SNP.recal-INDEL.filter-pass.vcf.gz.tbi"
+
+  // GATK specific settings
+  ref_seq = "/cbio/dbs/gatk/2.8/b37/human_g1k_v37_decoy.fasta"
+  ref_seq_index = "/cbio/dbs/gatk/2.8/b37/human_g1k_v37_decoy.fasta.fai"
+  ref_seq_dict = "/cbio/dbs/gatk/2.8/b37/human_g1k_v37_decoy.dict"
+
+  build = "b37"
 }
 
 executor{
     jobName = { "$task.tag" }
     queueSize = 100
-    submitRateLimit = '10 min' // submit 10 jobs per minutde
+    submitRateLimit = '10 min' // submit 10 jobs per minute
 }
 
 process {
     cache = true
-
-    withLabel: bwa_samtools {
-         container = 'docker://quay.io/grbot/bwa-samtools'
-    }
 
     withLabel: gatk {
          container = 'docker://broadinstitute/gatk:4.1.3.0'
@@ -23,7 +28,7 @@ process {
 
     cpus = 1
     memory = 4.GB
-    time = 12.h
+    time = 336.h
     errorStrategy = 'retry'
     maxRetries = 5
     maxErrors = 1000
@@ -37,6 +42,7 @@ profiles {
     ilifu {
         process.executor = 'slurm'
         process.queue = 'Main'
+        process.clusterOptions = '--account b56-cbio-001-ag'
     }
     wits {
         process.executor = 'slurm'

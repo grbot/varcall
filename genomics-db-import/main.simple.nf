@@ -46,6 +46,7 @@ if ( (db_update == "yes") && db.exists() ){
     exit 1
 }
 
+
 if (params.build == "b37") {
   chroms = "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,X,Y,MT".split(',')
 } else if (params.build == "b38"){
@@ -57,18 +58,7 @@ if (params.build == "b37") {
     exit 1
 }
 
-/*
-process print_sample_info {
-    tag { "${sample_id}" }
-    echo true
-    input:
-    set val(sample_id), file(gvcf_file) from samples_1
-    script:
-    """
-    printf "[sample_info] sample: ${sample_id}\tgVCF: ${gvcf_file}\n"
-    """
-}
-*/
+chrom_list = Arrays.asList(chroms)
 
 process log_tool_version_gatk {
     tag { "${params.project_name}.ltVG" }
@@ -83,6 +73,22 @@ process log_tool_version_gatk {
     mem = task.memory.toGiga() - 3
     """
     gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms500m -Xmx${mem}g" --version > tool.gatk.version 2>&1
+    """
+}
+
+process create_interval_list {
+    tag { "${params.project_name}.cIL" }
+    publishDir "${params.out_dir}/genomics-db-import", mode: 'symlink', overwrite: false
+
+    input:
+    chrom_list
+
+    output:
+    file("interval.list") into intervals
+
+    script:
+    """
+      echo "${chrom_list.join('\n')}" > interval.list
     """
 }
 
@@ -104,38 +110,41 @@ process create_variant_list {
 
 if (db_update == "no"){
   process run_genomics_db_import_new {
-      tag { "${params.project_name}.${chr}.rGDIN" }
-      // memory { 24.GB * task.attempt }  
-      memory { 230.GB * task.attempt }  
+      tag { "${params.project_name}.rGDIN" }
+      memory { 232.GB * task.attempt }  
       publishDir "${params.out_dir}/genomics-db-import", mode: 'symlink', overwrite: false
       label 'gatk'
   
       input:
       file(gvcf_list)
       file db
-      each chr from chroms 
+      file intervals
   
       output:
-      file("${db}/${chr}.gdb")  into cohort_chr_calls
+      file("${db}/gdb")  into cohort_chr_calls
   
       script:
       mem = task.memory.toGiga() - 32
         // We delete the database first if it was created on a failed run. E.g. when memory was to low on previous nextflow process.
       """
-      rm -rf ${db}/${chr}.gdb && \
+      mkdir tmp && \
+      rm -rf ${db}/gdb && \
       gatk --java-options "-XX:+UseSerialGC -Xms4g -Xmx${mem}g"  \
       GenomicsDBImport \
-      --L ${chr} \
+      --intervals ${intervals} \
       --variant ${gvcf_list} \
-      --genomicsdb-workspace-path ${db}/${chr}.gdb
+      --genomicsdb-workspace-path ${db}/gdb \
+      --batch-size 50 \
+      --reader-threads 5 \
+     --tmp-dir tmp
       """
   }
 }
 
 if (db_update == "yes"){
   process run_genomics_db_import_update {
-      tag { "${params.project_name}.${chr}.rGDIU" }
-      memory { 24.GB * task.attempt }  
+      tag { "${params.project_name}.rGDIU" }
+      memory { 232.GB * task.attempt }  
       publishDir "${params.out_dir}/genomics-db-import", mode: 'symlink', overwrite: false
       label 'gatk'
   
@@ -143,19 +152,23 @@ if (db_update == "yes"){
       file(gvcf_list)
       file db
       file db_backup // this staging forces the process to wait for the backup to be made before continuing
-      each chr from chroms 
+      file intervals 
   
       output:
-      file("${db}/${chr}.gdb")  into cohort_chr_calls
+      file("${db}/gdb")  into cohort_chr_calls
   
       script:
       mem = task.memory.toGiga() - 10
       """
+      mkdir tmp && \
       gatk --java-options "-XX:+UseSerialGC -Xms4g -Xmx${mem}g"  \
       GenomicsDBImport \
-      --L ${chr} \
+      --intervals ${intervals} \
       --variant ${gvcf_list} \
-      --genomicsdb-update-workspace-path ${db}/${chr}.gdb
+      --genomicsdb-update-workspace-path ${db}/gdb \
+      --batch-size 50 \
+      --reader-threads 5 \
+      --tmp-dir tmp
       """
   }
 }

@@ -1,6 +1,6 @@
 params{
   project_name = "NA12878"
-  sample_sheet = "/users/gerrit/projects/refimpute/varcall/align/NA12878.samplesheet.tsv"
+  sample_sheet = "/users/gerrit/code/varcall/align/NA12878.samplesheet.tsv"
   out_dir = "/cbio/users/gerrit/scratch/nextflow-out/NA12878/b37"
 
   // bwa

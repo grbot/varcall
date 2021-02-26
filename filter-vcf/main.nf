@@ -14,7 +14,7 @@ process log_tool_version_bcftools {
     tag { "${params.project_name}.ltViB" }
     echo true
     publishDir "${params.out_dir}/${params.cohort_id}/filter-vcf", mode: 'move', overwrite: false
-    label 'gatk'
+    label 'bcftools'
 
     output:
     file("tool.bcftools.version") into tool_version_bcftools
@@ -27,13 +27,15 @@ process log_tool_version_bcftools {
 }
 
 process filter_short_snps_indels {
-    tag { "${params.project_name}.${params.cohort_id}.fSSI" }
+    tag { "${params.project_name}.${params.cohort_id}.fP" }
     publishDir "${out_dir}/${params.cohort_id}/filter-vcf", mode: 'move', overwrite: false
     label 'bcftools'
+    time = 336.h    
+
     input:
       set val (file_name), file (vcf) from vcfs1
     output:
-    file("${filebase}.filter-pass.vcf.gz") into vcf_short_out
+    set file("${filebase}.filter-pass.vcf.gz"), file("${filebase}.filter-pass.vcf.gz.tbi") into vcf_pass_out
 
     script:
     filebase = (file(vcf[0].baseName)).baseName
@@ -43,6 +45,9 @@ process filter_short_snps_indels {
     -O z \
     -o "${filebase}.filter-pass.vcf.gz" \
     ${vcf[0]} 
+    bcftools index \
+    -t \
+    "${filebase}.filter-pass.vcf.gz"
     """
 }
 
@@ -50,10 +55,12 @@ process filter_other {
     tag { "${params.project_name}.${params.cohort_id}.fO" }
     publishDir "${out_dir}/${params.cohort_id}/filter-vcf", mode: 'move', overwrite: false
     label 'bcftools'
+    time = 336.h
+
     input:
       set val (file_name), file (vcf) from vcfs2
     output:
-    file("${filebase}.filter-other.vcf.gz") into vcf_long_out
+    set file("${filebase}.filter-other.vcf.gz"), file("${filebase}.filter-other.vcf.gz.tbi") into vcf_other_out
 
     script:
     filebase = (file(vcf[0].baseName)).baseName
@@ -63,6 +70,9 @@ process filter_other {
     -O z \
     -o "${filebase}.filter-other.vcf.gz" \
     ${vcf[0]}
+    bcftools index \
+    -t \
+    "${filebase}.filter-other.vcf.gz"
     """
 }
 
