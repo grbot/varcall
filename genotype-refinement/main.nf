@@ -32,6 +32,16 @@ process log_tool_version_gatk {
     """
 }
 
+if (params.supporting)
+  supporting = "-supporting " + params.supporting
+else
+  supporting = ""
+
+if (params.family)
+  family = "-ped " +  params.family
+else
+  family = ""
+
 Channel.from( file(params.vcf) )
         .set{ vcf_ch }
 Channel.from( file(params.vcf_index) )
@@ -58,7 +68,11 @@ process run_calculate_genotype_posteriors {
        mem = task.memory.toGiga() - 4
     """
     gatk --java-options  "-XX:+UseSerialGC -Xms4g -Xmx${mem}g" \
+<<<<<<< HEAD
     CalculateGenotypePosteriors  \
+=======
+    CalculateGenotypePosteriors ${supporting} ${family} \
+>>>>>>> 8b6e571682f12937d699f828d03e3b04279b8783
    -R ${ref_seq} \
    -L ${chr} \
    -V ${vcf} \
@@ -164,7 +178,11 @@ if (params.build == "b37") {
        echo "${vcf.join('\n')}" | grep "\\.20\\.vcf.gz" >> ${params.cohort_id}.vcf.list
        echo "${vcf.join('\n')}" | grep "\\.21\\.vcf.gz" >> ${params.cohort_id}.vcf.list
        echo "${vcf.join('\n')}" | grep "\\.22\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       
+ /*      
+       echo "${vcf.join('\n')}" | grep "\\.X\\.g.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.Y\\.g.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.MT\\.g.vcf.gz" >> ${params.cohort_id}.vcf.list 
+ */      
        gatk --java-options  "-XX:+UseSerialGC -Xms4g -Xmx${mem}g" \
        GatherVcfs \
        -I ${params.cohort_id}.vcf.list \
@@ -212,7 +230,11 @@ if (params.build == "b38") {
        echo "${vcf.join('\n')}" | grep "\\.chr20\\.vcf.gz" >> ${params.cohort_id}.vcf.list
        echo "${vcf.join('\n')}" | grep "\\.chr21\\.vcf.gz" >> ${params.cohort_id}.vcf.list
        echo "${vcf.join('\n')}" | grep "\\.chr22\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       
+/*
+       echo "${vcf.join('\n')}" | grep "\\.chrX\\.g.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chrY\\.g.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chrM\\.g.vcf.gz" >> ${params.cohort_id}.vcf.list
+*/       
        gatk --java-options  "-XX:+UseSerialGC -Xms4g -Xmx${mem}g" \
        GatherVcfs \
        -I ${params.cohort_id}.vcf.list \

@@ -1,6 +1,6 @@
 # Intro
 
-The Nextflow script does Genotype Refinement (runs CalculateGenotypePosteriors, VariantFiltration and VariantAnnotator ) on the whole genome (chr1 -> 22, X, Y and MT).
+The Nextflow script does Genotype Refinement (runs CalculateGenotypePosteriors, VariantFiltration and VariantAnnotator) on the whole genome (chr1 -> 22, X, Y and MT).
 
 Please see `nextflow.conf` for GATK version and references databases used. Path to VQSR filtered VCF file is also specified in nextflow config.
 
@@ -10,7 +10,7 @@ For each dataset
 1) Modify your `nextflow.config` to read the `vcf` and specify the output directory e.g. `out_dir = "/global/scratch/gerrit/projects/adme/datasets/NA12878/nextflow-out"`
 2) Run the workflow
 ```
-nextflow -log nextflow.log run -w /global5/scratch/gerrit/projects/adme/datasets/NA12878-work -c /home/gerrit/code/varcall/genotype-refinement/nextflow.config.NA12878 /home/gerrit/code/varcall/genotype-refinement/main.nf -profile cbio -with-report NA12878.report.html -with-trace -with-timeline NA12878.timeline.html -resume
+nextflow -log nextflow.log run -c /users/gerrit/projects/refimpute/varcall/genotype-refinement/nextflow.config.v4 /users/gerrit/projects/refimpute/varcall/genotype-refinement/main.nf -w /cbio/users/gerrit/projects/refimpute/b37-panel1/nextflow-work-genotype-refinement --with-report v4.genotype-refinement.report.html --with-timeline v4.genotype-refinement.timeline.html -profile ilifu -resume
 ```
 
 ## Output
