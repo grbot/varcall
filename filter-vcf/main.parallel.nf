@@ -50,7 +50,8 @@ process filter_short_snps_indels {
       each chr from chroms
 
     output:
-    set file("${filebase}.${chr}.filter-pass.vcf.gz"), file("${filebase}.${chr}.filter-pass.vcf.gz.tbi") into vcf_pass_out
+    file("${filebase}.${chr}.filter-pass.vcf.gz") into vcf_pass_out
+    file("${filebase}.${chr}.filter-pass.vcf.gz.tbi") into vcf_pass_out_index
 
     script:
     filebase = (file(vcf[0].baseName)).baseName
@@ -94,6 +95,105 @@ process filter_other {
     """
 }
 
+vcf_pass_out.toList().set{ concat_ready  }
+
+if (params.build == "b37") {
+  process run_concat_vcf_build37 {
+       tag { "${params.project_name}.${params.cohort_id}.rCV" }
+       memory { 16.GB * task.attempt }  
+       publishDir "${params.out_dir}/${params.cohort_id}/filter-vcf", mode: 'copy', overwrite: false
+       label 'gatk'
+  
+       input:
+       file(vcf) from concat_ready
+  
+       output:
+  	   set file("${params.cohort_id}.cgp.vf.va.filter-pass.vcf.gz"), file("${params.cohort_id}.cgp.vf.va.filter-pass.vcf.gz.tbi") into combined_calls
+  
+       script:
+         mem = task.memory.toGiga() - 4
+       """
+       echo "${vcf.join('\n')}" | grep "\\.1\\.filter-pass.vcf.gz" > ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.2\\.filter-pass.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.3\\.filter-pass.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.4\\.filter-pass.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.5\\.filter-pass.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.6\\.filter-pass.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.7\\.filter-pass.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.8\\.filter-pass.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.9\\.filter-pass.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.10\\.filter-pass.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.11\\.filter-pass.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.12\\.filter-pass.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.13\\.filter-pass.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.14\\.filter-pass.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.15\\.filter-pass.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.16\\.filter-pass.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.17\\.filter-pass.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.18\\.filter-pass.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.19\\.filter-pass.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.20\\.filter-pass.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.21\\.filter-pass.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.22\\.filter-pass.vcf.gz" >> ${params.cohort_id}.vcf.list
+       gatk --java-options  "-XX:+UseSerialGC -Xms4g -Xmx${mem}g" \
+       GatherVcfs \
+       -I ${params.cohort_id}.vcf.list \
+       -O ${params.cohort_id}.cgp.vf.va.filter-pass.vcf.gz # GatherVCF does not index the VCF. The VCF will be indexed in the next tabix operation.
+       tabix -p vcf ${params.cohort_id}.cgp.vf.va.filter-pass.vcf.gz
+       """
+  }
+}
+
+if (params.build == "b38") {
+  process run_concat_vcf_build38 {
+       tag { "${params.project_name}.${params.cohort_id}.rCV" }
+       memory { 16.GB * task.attempt }  
+       publishDir "${params.out_dir}/${params.cohort_id}/filter-vcf", mode: 'copy', overwrite: false
+       label 'gatk'
+  
+       input:
+       file(vcf) from concat_ready
+  
+       output:
+  	   set file("${params.cohort_id}.cgp.vf.va.filter-pass.vcf.gz"), file("${params.cohort_id}.cgp.vf.va.filter-pass.vcf.gz.tbi") into combined_calls
+  
+       script:
+         mem = task.memory.toGiga() - 4
+       """
+       echo "${vcf.join('\n')}" | grep "\\.chr1\\.vcf.gz" > ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr2\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr3\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr4\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr5\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr6\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr7\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr8\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr9\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr10\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr11\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr12\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr13\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr14\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr15\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr16\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr17\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr18\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr19\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr20\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr21\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr22\\.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chrX\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chrY\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chrM\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       
+       gatk --java-options  "-XX:+UseSerialGC -Xms4g -Xmx${mem}g" \
+       GatherVcfs \
+       -I ${params.cohort_id}.vcf.list \
+       -O ${params.cohort_id}.cgp.vf.va.filter-pass.vcf.gz # GatherVCF does not index the VCF. The VCF will be indexed in the next tabix operation.
+       tabix -p vcf ${params.cohort_id}.cgp.vf.va.filter-pass.vcf.gz
+       """
+  }
+}
 
 workflow.onComplete {
 
