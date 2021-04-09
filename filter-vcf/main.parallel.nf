@@ -160,31 +160,31 @@ if (params.build == "b38") {
        script:
          mem = task.memory.toGiga() - 4
        """
-       echo "${vcf.join('\n')}" | grep "\\.chr1\\.vcf.gz" > ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chr2\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chr3\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chr4\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chr5\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chr6\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chr7\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chr8\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chr9\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chr10\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chr11\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chr12\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chr13\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chr14\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chr15\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chr16\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chr17\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chr18\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chr19\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chr20\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chr21\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chr22\\.vcf.gz" >> ${params.cohort_id}.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chrX\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chrY\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
-       echo "${vcf.join('\n')}" | grep "\\.chrM\\.g.vcf.gz" >> ${params.cohort_id}.g.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr1\\.filter-pass.vcf.gz" > ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr2\\.filter-pass.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr3\\.filter-pass.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr4\\.filter-pass.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr5\\.filter-pass.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr6\\.filter-pass.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr7\\.filter-pass.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr8\\.filter-pass.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr9\\.filter-pass.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr10\\.filter-pass.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr11\\.filter-pass.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr12\\.filter-pass.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr13\\.filter-pass.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr14\\.filter-pass.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr15\\.filter-pass.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr16\\.filter-pass.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr17\\.filter-pass.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr18\\.filter-pass.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr19\\.filter-pass.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr20\\.filter-pass.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr21\\.filter-pass.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chr22\\.filter-pass.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chrX\\.filter-pass.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chrY\\.filter-pass.vcf.gz" >> ${params.cohort_id}.vcf.list
+       echo "${vcf.join('\n')}" | grep "\\.chrM\\.filter-pass.vcf.gz" >> ${params.cohort_id}.vcf.list
        
        gatk --java-options  "-XX:+UseSerialGC -Xms4g -Xmx${mem}g" \
        GatherVcfs \
