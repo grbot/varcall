@@ -53,7 +53,7 @@ bam_file.into{ bam_file_1; bam_file_2; bam_file_3 }
 process index_bam {
     tag { "${params.project_name}.${sample_id}.iB" }
     memory { 4.GB * task.attempt }
-    publishDir "${params.out_dir}/${sample_id}", mode: 'move', overwrite: false
+    publishDir "${params.out_dir}/${sample_id}", mode: 'copy', overwrite: false
     label 'bwa_samtools'
     input:
     set val(sample_id), file(bam_file) from bam_file_1
