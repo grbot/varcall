@@ -25,6 +25,7 @@ params{
   // samtools
   memory_per_thread = "500M"
 
+  build = "b37" // or b38
 }
 
 executor{

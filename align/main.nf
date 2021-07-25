@@ -21,6 +21,9 @@ ref_seq_ann = Channel.fromPath(params.ref_seq_ann).toList()
 ref_seq_bwt = Channel.fromPath(params.ref_seq_bwt).toList()
 ref_seq_pac = Channel.fromPath(params.ref_seq_pac).toList()
 ref_seq_sa = Channel.fromPath(params.ref_seq_sa).toList()
+if (params.build == "b38") {
+  ref_seq_alt = Channel.fromPath(params.ref_seq_alt).toList()
+}
 known_indels_1 = Channel.fromPath(params.known_indels_1).toList()
 known_indels_1_index = Channel.fromPath(params.known_indels_1_index).toList()
 known_indels_2 = Channel.fromPath(params.known_indels_2).toList()
@@ -73,54 +76,106 @@ process log_tool_version_gatk {
     """
 }
 
-process run_bwa {
-    tag { "${params.project_name}.${sample_id}.rBwa" }
-    memory { 64.GB * task.attempt }
-    cpus { "${params.bwa_threads}" }
-    publishDir "${params.out_dir}/${sample_id}", mode: 'symlink', overwrite: false
-    label 'bwa_samtools'
-
-    input:
-    set val(sample_id), file(fastq_r1_file), file(fastq_r2_file), val(flowcell), val(lane) from samples_2
-    file (ref) from ref_seq
-    file (ref_index) from ref_seq_index
-    file (ref_amb) from ref_seq_amb
-    file (ref_ann) from ref_seq_ann
-    file (ref_bwt) from ref_seq_bwt
-    file (ref_pac) from ref_seq_pac
-    file (ref_sa) from ref_seq_sa
-
-    output:
-    set val("$sample_id"), file("${sample_id}.bam")  into raw_bam
-    
-    script:
-   
-    readgroup_info="@RG\\tID:$flowcell.$lane\\tLB:LIBA\\tSM:$sample_id\\tPL:Illumina"
-    
-    if(lane == "0") {
-        sample_id = "$sample_id"
-    } else {
-	sample_id = "$sample_id-${flowcell}.${lane}"
-    }
-   
-    nr_threads = task.cpus - 1
-    
-    """
-    bwa mem \
-    -R \"${readgroup_info}\" \
-    -t ${nr_threads}  \
-    -K 100000000 \
-    -Y \
-    ${ref} \
-    ${fastq_r1_file} \
-    ${fastq_r2_file} | \
-    samtools sort \
-    -@ ${nr_threads} \
-    -m ${params.memory_per_thread} \
-    - > ${sample_id}.bam
-    """
+if (params.build == "b37") {
+  process run_bwa_build37 {
+      tag { "${params.project_name}.${sample_id}.rBwa" }
+      memory { 64.GB * task.attempt }
+      cpus { "${params.bwa_threads}" }
+      publishDir "${params.out_dir}/${sample_id}", mode: 'symlink', overwrite: false
+      label 'bwa_samtools'
+  
+      input:
+      set val(sample_id), file(fastq_r1_file), file(fastq_r2_file), val(flowcell), val(lane) from samples_2
+      file (ref) from ref_seq
+      file (ref_index) from ref_seq_index
+      file (ref_amb) from ref_seq_amb
+      file (ref_ann) from ref_seq_ann
+      file (ref_bwt) from ref_seq_bwt
+      file (ref_pac) from ref_seq_pac
+      file (ref_sa) from ref_seq_sa
+  
+      output:
+      set val("$sample_id"), file("${sample_id}.bam")  into raw_bam
+      
+      script:
+     
+      readgroup_info="@RG\\tID:$flowcell.$lane\\tLB:LIBA\\tSM:$sample_id\\tPL:Illumina"
+      
+      if(lane == "0") {
+          sample_id = "$sample_id"
+      } else {
+  	sample_id = "$sample_id-${flowcell}.${lane}"
+      }
+     
+      nr_threads = task.cpus - 1
+      
+      """
+      bwa mem \
+      -R \"${readgroup_info}\" \
+      -t ${nr_threads}  \
+      -K 100000000 \
+      -Y \
+      ${ref} \
+      ${fastq_r1_file} \
+      ${fastq_r2_file} | \
+      samtools sort \
+      -@ ${nr_threads} \
+      -m ${params.memory_per_thread} \
+      - > ${sample_id}.bam
+      """
+  }
 }
 
+if (params.build == "b38") {
+  process run_bwa_build38 {
+      tag { "${params.project_name}.${sample_id}.rBwa" }
+      memory { 64.GB * task.attempt }
+      cpus { "${params.bwa_threads}" }
+      publishDir "${params.out_dir}/${sample_id}", mode: 'symlink', overwrite: false
+      label 'bwa_samtools'
+  
+      input:
+      set val(sample_id), file(fastq_r1_file), file(fastq_r2_file), val(flowcell), val(lane) from samples_2
+      file (ref) from ref_seq
+      file (ref_index) from ref_seq_index
+      file (ref_amb) from ref_seq_amb
+      file (ref_ann) from ref_seq_ann
+      file (ref_bwt) from ref_seq_bwt
+      file (ref_pac) from ref_seq_pac
+      file (ref_sa) from ref_seq_sa
+      file (ref_alt) from ref_seq_alt
+  
+      output:
+      set val("$sample_id"), file("${sample_id}.bam")  into raw_bam
+      
+      script:
+     
+      readgroup_info="@RG\\tID:$flowcell.$lane\\tLB:LIBA\\tSM:$sample_id\\tPL:Illumina"
+      
+      if(lane == "0") {
+          sample_id = "$sample_id"
+      } else {
+  	sample_id = "$sample_id-${flowcell}.${lane}"
+      }
+     
+      nr_threads = task.cpus - 1
+      
+      """
+      bwa mem \
+      -R \"${readgroup_info}\" \
+      -t ${nr_threads}  \
+      -K 100000000 \
+      -Y \
+      ${ref} \
+      ${fastq_r1_file} \
+      ${fastq_r2_file} | \
+      samtools sort \
+      -@ ${nr_threads} \
+      -m ${params.memory_per_thread} \
+      - > ${sample_id}.bam
+      """
+  }
+}
 process run_mark_duplicates {
     tag { "${params.project_name}.${sample_id}.rMD" }
     memory { 16.GB * task.attempt }
