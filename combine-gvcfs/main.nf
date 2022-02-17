@@ -66,14 +66,14 @@ process create_variant_list {
     publishDir "${params.out_dir}/combine-gvcfs", mode: 'copy', overwrite: false
 
     input:
-    val gvcf_file from gvcf_files
+    file ('gvcf_file_*') from gvcf_files
     
     output:
     file("gvcf.list") into gvcf_list
     
     script:
     """
-    echo "${gvcf_file.join('\n')}" > gvcf.list
+    realpath -s gvcf_file_* > gvcf.list
     """
 }
 
