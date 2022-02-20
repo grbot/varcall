@@ -64,7 +64,7 @@ process run_fastqc {
     set val(sample_id), file(fastq_r1_file), file(fastq_r2_file) from samples_2
 
     output:
-    file("${sample}_fastqc/*.zip") into fastqc_files
+    file("${sample_id}_fastqc/*.zip") into fastqc_files
     
     script:
     
@@ -78,8 +78,8 @@ process run_fastqc {
 }
 
 process run_multiqc {
-    tag { "${params.project_name}.${sample_id}.rMqc" }
-    publishDir "${params.out_dir}/${sample_id}", mode: 'copy', overwrite: false
+    tag { "${params.project_name}.rMqc" }
+    publishDir "${params.out_dir}/", mode: 'copy', overwrite: false
     label 'multiqc'
 
     input:
