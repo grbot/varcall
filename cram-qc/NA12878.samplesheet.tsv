@@ -1,0 +1,2 @@
+SampleID	Gender	FastqR1	FastqR2	BAM/CRAM	gVCF
+NA12878	.	.	.	/cbio/datasets/human/giab/b37/cram/NA12878_small.md.recal.bam	.	.
