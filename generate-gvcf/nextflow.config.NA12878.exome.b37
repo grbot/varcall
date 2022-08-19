@@ -1,0 +1,69 @@
+params{
+  project_name = "NA12878"
+  sample_sheet = "/users/gerrit/projects/021/varcall/generate-gvcf/NA12878.exome.samplesheet.tsv"
+  sample_coverage = "high"
+  out_dir = "/cbio/users/gerrit/scratch/nextflow-out/NA12878.exome/b37/"
+
+  // GATK specific settings
+  ref_seq = "/cbio/dbs/gatk/2.8/b37/human_g1k_v37_decoy.fasta"
+  ref_seq_index = "/cbio/dbs/gatk/2.8/b37/human_g1k_v37_decoy.fasta.fai"
+  ref_seq_dict = "/cbio/dbs/gatk/2.8/b37/human_g1k_v37_decoy.dict"
+  dbsnp = "/cbio/dbs/gatk/2.8/b37/dbsnp_138.b37.vcf"
+  dbsnp_index = "/cbio/dbs/gatk/2.8/b37/dbsnp_138.b37.vcf.idx"
+  
+  build = "b37"
+
+  target_regions = "/cbio/datasets/human/giab/exome/fastq/nexterarapidcapture_expandedexome_targetedregions.b37.bed"
+
+}
+
+process{
+
+    cache = true
+
+    withLabel: gatk {
+         container = 'docker://broadinstitute/gatk:4.1.3.0'
+    }
+
+    cpus = 1
+    memory = 4.GB
+    time = 96.h
+    errorStrategy = 'retry'
+    maxRetries = 5
+    maxErrors = 1000
+}
+
+executor{
+    jobName = { "$task.tag" }
+    queueSize = 100
+    submitRateLimit = '10 min' // submit 10 jobs per minute
+}
+
+profiles {
+    standard {
+        process.executor = 'local'
+    }
+    ilifu {
+        process.executor = 'slurm'
+        process.queue = 'Main'
+    }
+    wits {
+        process.executor = 'slurm'
+        process.queue = 'batch'
+    }
+    cbio {
+         process.executor = 'pbs'
+         process.queue = 'dev'
+    }
+
+}
+
+trace {
+    enabled = true
+    file = "${params.project_name}.trace.txt"
+}
+
+singularity {
+  autoMounts = true
+  enabled = true
+}
