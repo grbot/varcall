@@ -17,9 +17,13 @@ if (params.build == "b37") {
   y = "Y"
   // Coordinates are from here: https://www.ncbi.nlm.nih.gov/grc/human
   x_par1 = "60001-2699520"
+  x_par1_target_default = "60001-60001"
   x_par2 = "154931044-155260560"
+  x_par2_target_default = "154931044-154931044"
   y_par1 = "10001-2649520"
+  y_par1_target_default = "10001-10001"
   y_par2 = "59034050-59363566"
+  y_par2_target_default = "59034050-59034050"
   mt = "MT"
 } else if (params.build == "b38"){
   autosomes = "chr1,chr2,chr3,chr4,chr5,chr6,chr7,chr8,chr9,chr10,chr11,chr12,chr13,chr14,chr15,chr16,chr17,chr18,chr19,chr20,chr21,chr22".split(',')
@@ -27,9 +31,13 @@ if (params.build == "b37") {
   y = "chrY"
   // No autosomal region changes from build 37 to 38
   x_par1 = "10001-2781479"
+  x_par1_target_default = "10001-10001"
   x_par2 = "155701383-156030895"
+  x_par2_target_default = "155701383-155701383"
   y_par1 = "10001-2781479"
+  y_par1_target_default = "10001-10001"
   y_par2 = "56887903-57217415"
+  y_par2_target_default = "56887903-56887903"
   mt = "chrM"
 } else {
   println "\n============================================================================================="
@@ -43,6 +51,8 @@ ref_seq_index = Channel.fromPath(params.ref_seq_index).toList()
 ref_seq_dict = Channel.fromPath(params.ref_seq_dict).toList()
 dbsnp = Channel.fromPath(params.dbsnp).toList()
 dbsnp_index = Channel.fromPath(params.dbsnp_index).toList()
+
+target_regions = file(params.target_regions)
 
 /*
 process print_sample_info {
@@ -99,20 +109,54 @@ process run_haplotype_caller_on_autosomes {
       call_conf = 30
     else if ( params.sample_coverage == "low" )
       call_conf = 10
+
     mem = task.memory.toGiga() - 4
+
+    if( target_regions.exists() )
     """
-    gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g"  \
-    HaplotypeCaller \
-    -R ${ref_seq} \
-    -I $bam_file \
-    --emit-ref-confidence GVCF \
-    --dbsnp ${dbsnp} \
-    --L $chr \
-    --genotyping-mode DISCOVERY \
-    -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
-    -stand-call-conf ${call_conf} \
-    --sample-ploidy 2 \
-    -O ${sample_id}.${chr}.g.vcf.gz
+      count=`cat ${target_regions} | awk '\$1=="${chr}"' | wc -l`
+      if [[ \$count > 0 ]]; then
+        gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g"  \
+        HaplotypeCaller \
+        -R ${ref_seq} \
+        -I $bam_file \
+        --emit-ref-confidence GVCF \
+        --dbsnp ${dbsnp} \
+        --L ${target_regions} --L ${chr} --interval-set-rule INTERSECTION \
+        --genotyping-mode DISCOVERY \
+        -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
+        -stand-call-conf ${call_conf} \
+        --sample-ploidy 2 \
+        -O ${sample_id}.${chr}.g.vcf.gz
+      else
+        gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g"  \
+        HaplotypeCaller \
+        -R ${ref_seq} \
+        -I $bam_file \
+        --emit-ref-confidence GVCF \
+        --dbsnp ${dbsnp} \
+        --L ${chr}:1-1 \
+        --genotyping-mode DISCOVERY \
+        -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
+        -stand-call-conf ${call_conf} \
+        --sample-ploidy 2 \
+        -O ${sample_id}.${chr}.g.vcf.gz
+     fi
+    """
+    else 
+    """
+     gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g"  \
+     HaplotypeCaller \
+     -R ${ref_seq} \
+     -I $bam_file \
+     --emit-ref-confidence GVCF \
+     --dbsnp ${dbsnp} \
+     --L ${chr} \
+     --genotyping-mode DISCOVERY \
+     -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
+     -stand-call-conf ${call_conf} \
+     --sample-ploidy 2 \
+     -O ${sample_id}.${chr}.g.vcf.gz
     """
 }
 
@@ -146,20 +190,53 @@ process run_haplotype_caller_on_x_par1_male {
        call_conf = 30
      else if ( params.sample_coverage == "low" )
        call_conf = 10
+
      mem = task.memory.toGiga() - 4
+     if (target_regions.exists())
      """
-     gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g"  \
-     HaplotypeCaller \
-     -R ${ref_seq} \
-     -I $bam_file \
-     --emit-ref-confidence GVCF \
-     --dbsnp ${dbsnp} \
-     --L ${x}:${x_par1} \
-     --genotyping-mode DISCOVERY \
-     -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
-     -stand-call-conf ${call_conf} \
-     --sample-ploidy 2 \
-     -O ${sample_id}.X_PAR1.g.vcf.gz
+       count=`cat ${target_regions} | awk '\$1=="${x}"' | wc -l`
+       if [[ \$count > 0 ]]; then
+         gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g"  \
+         HaplotypeCaller \
+         -R ${ref_seq} \
+         -I $bam_file \
+         --emit-ref-confidence GVCF \
+         --dbsnp ${dbsnp} \
+         --L ${target_regions} --L ${x}:${x_par1} --interval-set-rule INTERSECTION \
+         --genotyping-mode DISCOVERY \
+         -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
+         -stand-call-conf ${call_conf} \
+         --sample-ploidy 2 \
+         -O ${sample_id}.X_PAR1.g.vcf.gz
+       else
+         gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g"  \
+         HaplotypeCaller \
+         -R ${ref_seq} \
+         -I $bam_file \
+         --emit-ref-confidence GVCF \
+         --dbsnp ${dbsnp} \
+         --L ${x}:${x_par1_target_default} \
+         --genotyping-mode DISCOVERY \
+         -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
+         -stand-call-conf ${call_conf} \
+         --sample-ploidy 2 \
+         -O ${sample_id}.X_PAR1.g.vcf.gz
+       fi
+     """
+     else
+     """
+       gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g"  \
+       HaplotypeCaller \
+       -R ${ref_seq} \
+       -I $bam_file \
+       --emit-ref-confidence GVCF \
+       --dbsnp ${dbsnp} \
+       --L ${x}:${x_par1} \
+       -genotyping-mode DISCOVERY \
+       -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
+       -stand-call-conf ${call_conf} \
+       --sample-ploidy 2 \
+       -O ${sample_id}.X_PAR1.g.vcf.gz
      """
 }
 
@@ -188,20 +265,54 @@ process run_haplotype_caller_on_x_par2_male {
        call_conf = 30
      else if ( params.sample_coverage == "low" )
        call_conf = 10
+
      mem = task.memory.toGiga() - 4
+     
+     if (target_regions.exists())
      """
-     gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g"  \
-     HaplotypeCaller \
-     -R ${ref_seq} \
-     -I $bam_file \
-     --emit-ref-confidence GVCF \
-     --dbsnp ${dbsnp} \
-     --L ${x}:${x_par2} \
-     --genotyping-mode DISCOVERY \
-     -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
-     -stand-call-conf ${call_conf} \
-     --sample-ploidy 2 \
-     -O ${sample_id}.X_PAR2.g.vcf.gz
+       count=`cat ${target_regions} | awk '\$1=="${x}"' | wc -l`
+       if [[ \$count > 0 ]]; then
+         gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g"  \
+         HaplotypeCaller \
+         -R ${ref_seq} \
+         -I $bam_file \
+         --emit-ref-confidence GVCF \
+         --dbsnp ${dbsnp} \
+         --L ${target_regions} --L ${x}:${x_par2} --interval-set-rule INTERSECTION" \
+         --genotyping-mode DISCOVERY \
+         -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
+         -stand-call-conf ${call_conf} \
+         --sample-ploidy 2 \
+         -O ${sample_id}.X_PAR2.g.vcf.gz
+       else
+         gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g"  \
+         HaplotypeCaller \
+         -R ${ref_seq} \
+         -I $bam_file \
+         --emit-ref-confidence GVCF \
+         --dbsnp ${dbsnp} \
+         --L ${x}:${x_par2_target_default} \
+         --genotyping-mode DISCOVERY \
+         -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
+         -stand-call-conf ${call_conf} \
+         --sample-ploidy 2 \
+         -O ${sample_id}.X_PAR2.g.vcf.gz
+       fi
+     """
+     else
+     """
+      gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g"  \
+      HaplotypeCaller \
+      -R ${ref_seq} \
+      -I $bam_file \
+      --emit-ref-confidence GVCF \
+      --dbsnp ${dbsnp} \
+      --L ${x}:${x_par2} \
+      --genotyping-mode DISCOVERY \
+      -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
+      -stand-call-conf ${call_conf} \
+      --sample-ploidy 2 \
+      -O ${sample_id}.X_PAR2.g.vcf.gz
      """
 }
 
@@ -230,20 +341,54 @@ process run_haplotype_caller_on_x_nonpar_male {
        call_conf = 30
      else if ( params.sample_coverage == "low" )
        call_conf = 10
+
      mem = task.memory.toGiga() - 4
+     
+     if (target_regions.exists())
      """
-     gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g"  \
-     HaplotypeCaller \
-     -R ${ref_seq} \
-     -I $bam_file \
-     --emit-ref-confidence GVCF \
-     --dbsnp ${dbsnp} \
-     --L ${x} -XL ${x}:${x_par1} -XL ${x}:${x_par2} \
-     --genotyping-mode DISCOVERY \
-     -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
-     -stand-call-conf ${call_conf} \
-     --sample-ploidy 1 \
-     -O ${sample_id}.X_nonPAR.g.vcf.gz
+       count=`cat ${target_regions} | awk '\$1=="${x}"' | wc -l`
+       if [[ \$count > 0 ]]; then
+         gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g"  \
+         HaplotypeCaller \
+         -R ${ref_seq} \
+         -I $bam_file \
+         --emit-ref-confidence GVCF \
+         --dbsnp ${dbsnp} \
+         --L ${target_regions} --L ${x} -XL ${x}:${x_par1} -XL ${x}:${x_par2} --interval-set-rule INTERSECTION \
+         --genotyping-mode DISCOVERY \
+         -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
+         -stand-call-conf ${call_conf} \
+         --sample-ploidy 1 \
+         -O ${sample_id}.X_nonPAR.g.vcf.gz
+       else
+         gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g"  \
+         HaplotypeCaller \
+         -R ${ref_seq} \
+         -I $bam_file \
+         --emit-ref-confidence GVCF \
+         --dbsnp ${dbsnp} \
+         --L ${x}:1-1 \
+         --genotyping-mode DISCOVERY \
+         -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
+         -stand-call-conf ${call_conf} \
+         --sample-ploidy 1 \
+         -O ${sample_id}.X_nonPAR.g.vcf.gz
+       done
+     """
+     else
+     """
+       gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g"  \
+       HaplotypeCaller \
+       -R ${ref_seq} \
+       -I $bam_file \
+       --emit-ref-confidence GVCF \
+       --dbsnp ${dbsnp} \
+       --L ${x} -XL ${x}:${x_par1} -XL ${x}:${x_par2} \
+       --genotyping-mode DISCOVERY \
+       -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
+       -stand-call-conf ${call_conf} \
+       --sample-ploidy 1 \
+       -O ${sample_id}.X_nonPAR.g.vcf.gz
      """
 }
 
@@ -272,20 +417,54 @@ process run_haplotype_caller_on_y_par1_male {
        call_conf = 30
      else if ( params.sample_coverage == "low" )
        call_conf = 10
+ 
      mem = task.memory.toGiga() - 4
+     
+     if (target_regions.exists())
      """
-     gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g"  \
-     HaplotypeCaller \
-     -R ${ref_seq} \
-     -I $bam_file \
-     --emit-ref-confidence GVCF \
-     --dbsnp ${dbsnp} \
-     --L ${y}:${y_par1} \
-     --genotyping-mode DISCOVERY \
-     -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
-     -stand-call-conf ${call_conf} \
-     --sample-ploidy 2 \
-     -O ${sample_id}.Y_PAR1.g.vcf.gz
+       count=`cat ${target_regions} | awk '\$1=="${y}"' | wc -l`
+       if [[ \$count > 0 ]]; then
+         gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g"  \
+         HaplotypeCaller \
+         -R ${ref_seq} \
+         -I $bam_file \
+         --emit-ref-confidence GVCF \
+         --dbsnp ${dbsnp} \
+         --L ${target_regions} --L ${y}:${y_par1} --interval-set-rule INTERSECTION \
+         --genotyping-mode DISCOVERY \
+         -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
+         -stand-call-conf ${call_conf} \
+         --sample-ploidy 2 \
+         -O ${sample_id}.Y_PAR1.g.vcf.gz
+       else
+         gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g"  \
+         HaplotypeCaller \
+         -R ${ref_seq} \
+         -I $bam_file \
+         --emit-ref-confidence GVCF \
+         --dbsnp ${dbsnp} \
+         --L ${y}:${y_par2_target_default}  \
+         --genotyping-mode DISCOVERY \
+         -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
+         -stand-call-conf ${call_conf} \
+         --sample-ploidy 2 \
+         -O ${sample_id}.Y_PAR1.g.vcf.gz
+       done
+     """
+     else
+     """
+       gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g"  \
+       HaplotypeCaller \
+       -R ${ref_seq} \
+       -I $bam_file \
+       --emit-ref-confidence GVCF \
+       --dbsnp ${dbsnp} \
+       --L ${y}:${y_par1}  \
+       --genotyping-mode DISCOVERY \
+       -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
+       -stand-call-conf ${call_conf} \
+       --sample-ploidy 2 \
+       -O ${sample_id}.Y_PAR1.g.vcf.gz
      """
 }
 
@@ -314,20 +493,53 @@ process run_haplotype_caller_on_y_par2_male {
        call_conf = 30
      else if ( params.sample_coverage == "low" )
        call_conf = 10
+
      mem = task.memory.toGiga() - 4
+     if (target_regions.exists()) // asume we are working with targetted sequence data
      """
-     gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g"  \
-     HaplotypeCaller \
-     -R ${ref_seq} \
-     -I $bam_file \
-     --emit-ref-confidence GVCF \
-     --dbsnp ${dbsnp} \
-     --L ${y}:${y_par2} \
-     --genotyping-mode DISCOVERY \
-     -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
-     -stand-call-conf ${call_conf} \
-     --sample-ploidy 2 \
-     -O ${sample_id}.Y_PAR2.g.vcf.gz
+       count=`cat ${target_regions} | awk '\$1=="${y}"' | wc -l`
+       if [[ \$count > 0 ]]; then
+         gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g"  \
+         HaplotypeCaller \
+         -R ${ref_seq} \
+         -I $bam_file \
+         --emit-ref-confidence GVCF \
+         --dbsnp ${dbsnp} \
+         --L ${target_regions} --L ${y}:${y_par2} --interval-set-rule INTERSECTION \
+         --genotyping-mode DISCOVERY \
+         -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
+         -stand-call-conf ${call_conf} \
+         --sample-ploidy 2 \
+         -O ${sample_id}.Y_PAR2.g.vcf.gz
+       else
+         gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g"  \
+         HaplotypeCaller \
+         -R ${ref_seq} \
+         -I $bam_file \
+         --emit-ref-confidence GVCF \
+         --dbsnp ${dbsnp} \
+         --L ${y}:${y_par2_target_default} \
+         --genotyping-mode DISCOVERY \
+         -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
+         -stand-call-conf ${call_conf} \
+         --sample-ploidy 2 \
+         -O ${sample_id}.Y_PAR2.g.vcf.gz
+       done
+     """
+     else
+     """
+       gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g"  \
+       HaplotypeCaller \
+       -R ${ref_seq} \
+       -I $bam_file \
+       --emit-ref-confidence GVCF \
+       --dbsnp ${dbsnp} \
+       --L ${y}:${y_par2} \
+       --genotyping-mode DISCOVERY \
+       -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
+       -stand-call-conf ${call_conf} \
+       --sample-ploidy 2 \
+       -O ${sample_id}.Y_PAR2.g.vcf.gz
      """
 }
 
@@ -356,20 +568,54 @@ process run_haplotype_caller_on_y_nonpar_male {
        call_conf = 30
      else if ( params.sample_coverage == "low" )
        call_conf = 10
+ 
      mem = task.memory.toGiga() - 4
+     
+     if (target_regions.exists())
      """
-     gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g"  \
-     HaplotypeCaller \
-     -R ${ref_seq} \
-     -I $bam_file \
-     --emit-ref-confidence GVCF \
-     --dbsnp ${dbsnp} \
-     --L ${y} -XL ${y}:${y_par1} -XL ${y}:${y_par2} \
-     --genotyping-mode DISCOVERY \
-     -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
-     -stand-call-conf ${call_conf} \
-     --sample-ploidy 1 \
-     -O ${sample_id}.Y_nonPAR.g.vcf.gz
+       count=`cat ${target_regions} | awk '\$1=="${y}"' | wc -l` 
+       if [[ \$count > 0 ]]; then
+         gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g"  \
+         HaplotypeCaller \
+         -R ${ref_seq} \
+         -I $bam_file \
+         --emit-ref-confidence GVCF \
+         --dbsnp ${dbsnp} \
+         --L ${target_regions} --L ${y} -XL ${y}:${y_par1} -XL ${y}:${y_par2} --interval-set-rule INTERSECTION \
+         --genotyping-mode DISCOVERY \
+         -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
+         -stand-call-conf ${call_conf} \
+         --sample-ploidy 1 \
+         -O ${sample_id}.Y_nonPAR.g.vcf.gz
+       else
+         gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g"  \
+         HaplotypeCaller \
+         -R ${ref_seq} \
+         -I $bam_file \
+         --emit-ref-confidence GVCF \
+         --dbsnp ${dbsnp} \
+         --L ${y}:1-1 \
+         --genotyping-mode DISCOVERY \
+         -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
+         -stand-call-conf ${call_conf} \
+         --sample-ploidy 1 \
+         -O ${sample_id}.Y_nonPAR.g.vcf.gz
+       done
+    """
+    else
+    """
+      gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g"  \
+      HaplotypeCaller \
+      -R ${ref_seq} \
+      -I $bam_file \
+      --emit-ref-confidence GVCF \
+      --dbsnp ${dbsnp} \
+      --L ${y} -XL ${y}:${y_par1} -XL ${y}:${y_par2} \
+      --genotyping-mode DISCOVERY \
+      -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
+      -stand-call-conf ${call_conf} \
+      --sample-ploidy 1 \
+      -O ${sample_id}.Y_nonPAR.g.vcf.gz
     """
 }
 
@@ -399,22 +645,55 @@ process run_haplotype_caller_on_x_female {
        call_conf = 30
      else if ( params.sample_coverage == "low" )
        call_conf = 10
-     mem = task.memory.toGiga() - 4
-     """
-     gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g" \
-     HaplotypeCaller \
-     -R ${ref_seq} \
-     -I $bam_file \
-     --emit-ref-confidence GVCF \
-     --dbsnp ${dbsnp} \
-     --L ${x} \
-     --genotyping-mode DISCOVERY \
-     -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
-     -stand-call-conf ${call_conf} \
-     --sample-ploidy 2 \
-     -O ${sample_id}.X.g.vcf.gz
-     """
 
+     mem = task.memory.toGiga() - 4
+     
+     if (target_regions.exists())
+     """
+       count=`cat ${target_regions} | awk '\$1=="${x}"' | wc -l`
+       if [[ \$count > 0 ]]; then
+         gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g" \
+         HaplotypeCaller \
+         -R ${ref_seq} \
+         -I $bam_file \
+         --emit-ref-confidence GVCF \
+         --dbsnp ${dbsnp} \
+         --L ${target_regions} --L ${x} --interval-set-rule INTERSECTION \
+         --genotyping-mode DISCOVERY \
+         -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
+         -stand-call-conf ${call_conf} \
+         --sample-ploidy 2 \
+         -O ${sample_id}.X.g.vcf.gz
+       else
+         gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g" \
+         HaplotypeCaller \
+         -R ${ref_seq} \
+         -I $bam_file \
+         --emit-ref-confidence GVCF \
+         --dbsnp ${dbsnp} \
+         --L ${x}:1-1 \
+         --genotyping-mode DISCOVERY \
+         -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
+         -stand-call-conf ${call_conf} \
+         --sample-ploidy 2 \
+         -O ${sample_id}.X.g.vcf.gz
+     fi 
+     """
+     else
+     """
+       gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g" \
+       HaplotypeCaller \
+       -R ${ref_seq} \
+       -I $bam_file \
+       --emit-ref-confidence GVCF \
+       --dbsnp ${dbsnp} \
+       --L ${x} \
+       --genotyping-mode DISCOVERY \
+       -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
+       -stand-call-conf ${call_conf} \
+       --sample-ploidy 2 \
+       -O ${sample_id}.X.g.vcf.gz
+     """
 }
 
 process run_haplotype_caller_on_mt {
@@ -442,20 +721,59 @@ process run_haplotype_caller_on_mt {
       call_conf = 30
     else if ( params.sample_coverage == "low" )
       call_conf = 10
+
+    if (target_regions.exists()) // asume we are working with targetted sequence data
+      region = "--L ${target_regions} --L ${mt} --interval-set-rule INTERSECTION"
+    else
+      region = "--L ${mt}"
+
     mem = task.memory.toGiga() - 4
+    
+    if (target_regions.exists())
     """
-    gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g"  \
-    HaplotypeCaller \
-    -R ${ref_seq} \
-    -I $bam_file \
-    --emit-ref-confidence GVCF \
-    --dbsnp ${dbsnp} \
-    --L ${mt} \
-    --genotyping-mode DISCOVERY \
-    -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
-    -stand-call-conf ${call_conf} \
-    --sample-ploidy 2 \
-    -O ${sample_id}.${mt}.g.vcf.gz
+      count=`cat ${target_regions} | awk '\$1=="${mt}"' | wc -l`
+      if [[ \$count > 0 ]]; then
+        gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g"  \
+        HaplotypeCaller \
+        -R ${ref_seq} \
+        -I $bam_file \
+        --emit-ref-confidence GVCF \
+        --dbsnp ${dbsnp} \
+        --L ${target_regions} --L ${mt} --interval-set-rule INTERSECTION \
+        --genotyping-mode DISCOVERY \
+        -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
+        -stand-call-conf ${call_conf} \
+        --sample-ploidy 2 \
+        -O ${sample_id}.${mt}.g.vcf.gz
+      else
+        gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g"  \
+        HaplotypeCaller \
+        -R ${ref_seq} \
+        -I $bam_file \
+        --emit-ref-confidence GVCF \
+        --dbsnp ${dbsnp} \
+        --L ${mt}:1-1 \
+        --genotyping-mode DISCOVERY \
+        -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
+        -stand-call-conf ${call_conf} \
+        --sample-ploidy 2 \
+        -O ${sample_id}.${mt}.g.vcf.gz
+      fi 
+    """
+    else
+    """
+      gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g"  \
+      HaplotypeCaller \
+      -R ${ref_seq} \
+      -I $bam_file \
+      --emit-ref-confidence GVCF \
+      --dbsnp ${dbsnp} \
+      --L ${mt} \
+      --genotyping-mode DISCOVERY \
+      -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
+      -stand-call-conf ${call_conf} \
+      --sample-ploidy 2 \
+      -O ${sample_id}.${mt}.g.vcf.gz
     """
 }
 
@@ -472,8 +790,7 @@ if (params.build == "b37"){
        set val(sample_id), file(gvcf) from all_calls
   
        output:
-  	   set val(sample_id), file("${sample_id}.g.vcf.gz") into combine_calls
-  	   set val(sample_id), file("${sample_id}.g.vcf.gz.tbi") into combine_calls_indexes
+	   set val(sample_id), file("${sample_id}.g.vcf.gz"), file("${sample_id}.g.vcf.gz.tbi") into combine_calls	
   
        script:
        mem = task.memory.toGiga() - 4
