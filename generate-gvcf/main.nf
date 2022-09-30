@@ -373,7 +373,7 @@ process run_haplotype_caller_on_x_nonpar_male {
          -stand-call-conf ${call_conf} \
          --sample-ploidy 1 \
          -O ${sample_id}.X_nonPAR.g.vcf.gz
-       done
+       fi 
      """
      else
      """
@@ -449,7 +449,7 @@ process run_haplotype_caller_on_y_par1_male {
          -stand-call-conf ${call_conf} \
          --sample-ploidy 2 \
          -O ${sample_id}.Y_PAR1.g.vcf.gz
-       done
+       fi
      """
      else
      """
@@ -524,7 +524,7 @@ process run_haplotype_caller_on_y_par2_male {
          -stand-call-conf ${call_conf} \
          --sample-ploidy 2 \
          -O ${sample_id}.Y_PAR2.g.vcf.gz
-       done
+       fi
      """
      else
      """
@@ -600,7 +600,7 @@ process run_haplotype_caller_on_y_nonpar_male {
          -stand-call-conf ${call_conf} \
          --sample-ploidy 1 \
          -O ${sample_id}.Y_nonPAR.g.vcf.gz
-       done
+       fi
     """
     else
     """
@@ -677,7 +677,7 @@ process run_haplotype_caller_on_x_female {
          -stand-call-conf ${call_conf} \
          --sample-ploidy 2 \
          -O ${sample_id}.X.g.vcf.gz
-     fi 
+       fi 
      """
      else
      """
