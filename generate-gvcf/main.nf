@@ -52,7 +52,9 @@ ref_seq_dict = Channel.fromPath(params.ref_seq_dict).toList()
 dbsnp = Channel.fromPath(params.dbsnp).toList()
 dbsnp_index = Channel.fromPath(params.dbsnp_index).toList()
 
-target_regions = file(params.target_regions)
+if(params.target_regions.exist()){
+    target_regions = file(params.target_regions)
+}
 
 /*
 process print_sample_info {
