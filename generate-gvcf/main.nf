@@ -52,7 +52,22 @@ ref_seq_dict = Channel.fromPath(params.ref_seq_dict).toList()
 dbsnp = Channel.fromPath(params.dbsnp).toList()
 dbsnp_index = Channel.fromPath(params.dbsnp_index).toList()
 
-target_regions = file(params.target_regions)
+if (params.type == "wes")
+{ 
+      type == "wes"
+      target_regions = file(params.target_regions)
+   
+}
+else if (params.type == "wgs")
+{  
+    type = "wgs"
+    target_regions = ""
+}
+else 
+{
+  println "Type \"${params.type}\" does not exist, currently supporting wgs and wes. Please set in config."
+  exit 1
+}
 
 /*
 process print_sample_info {
@@ -112,7 +127,7 @@ process run_haplotype_caller_on_autosomes {
 
     mem = task.memory.toGiga() - 4
 
-    if( target_regions.exists() )
+    if( type == "wes" )
     """
       count=`cat ${target_regions} | awk '\$1=="${chr}"' | wc -l`
       if [[ \$count > 0 ]]; then
@@ -192,7 +207,7 @@ process run_haplotype_caller_on_x_par1_male {
        call_conf = 10
 
      mem = task.memory.toGiga() - 4
-     if (target_regions.exists())
+     if ( type == "wes" )
      """
        count=`cat ${target_regions} | awk '\$1=="${x}"' | wc -l`
        if [[ \$count > 0 ]]; then
@@ -268,7 +283,7 @@ process run_haplotype_caller_on_x_par2_male {
 
      mem = task.memory.toGiga() - 4
      
-     if (target_regions.exists())
+     if ( type == "wes" )
      """
        count=`cat ${target_regions} | awk '\$1=="${x}"' | wc -l`
        if [[ \$count > 0 ]]; then
@@ -344,7 +359,7 @@ process run_haplotype_caller_on_x_nonpar_male {
 
      mem = task.memory.toGiga() - 4
      
-     if (target_regions.exists())
+     if ( type == "wes" )
      """
        count=`cat ${target_regions} | awk '\$1=="${x}"' | wc -l`
        if [[ \$count > 0 ]]; then
@@ -420,7 +435,7 @@ process run_haplotype_caller_on_y_par1_male {
  
      mem = task.memory.toGiga() - 4
      
-     if (target_regions.exists())
+     if ( type == "wes" )
      """
        count=`cat ${target_regions} | awk '\$1=="${y}"' | wc -l`
        if [[ \$count > 0 ]]; then
@@ -495,7 +510,7 @@ process run_haplotype_caller_on_y_par2_male {
        call_conf = 10
 
      mem = task.memory.toGiga() - 4
-     if (target_regions.exists()) // asume we are working with targetted sequence data
+     if ( type == "wes" ) // asume we are working with targetted sequence data
      """
        count=`cat ${target_regions} | awk '\$1=="${y}"' | wc -l`
        if [[ \$count > 0 ]]; then
@@ -571,7 +586,7 @@ process run_haplotype_caller_on_y_nonpar_male {
  
      mem = task.memory.toGiga() - 4
      
-     if (target_regions.exists())
+     if ( type == "wes" )
      """
        count=`cat ${target_regions} | awk '\$1=="${y}"' | wc -l` 
        if [[ \$count > 0 ]]; then
@@ -648,7 +663,7 @@ process run_haplotype_caller_on_x_female {
 
      mem = task.memory.toGiga() - 4
      
-     if (target_regions.exists())
+     if ( type == "wes" )
      """
        count=`cat ${target_regions} | awk '\$1=="${x}"' | wc -l`
        if [[ \$count > 0 ]]; then
@@ -722,14 +737,14 @@ process run_haplotype_caller_on_mt {
     else if ( params.sample_coverage == "low" )
       call_conf = 10
 
-    if (target_regions.exists()) // asume we are working with targetted sequence data
+    if ( type == "wes" ) // asume we are working with targetted sequence data
       region = "--L ${target_regions} --L ${mt} --interval-set-rule INTERSECTION"
     else
       region = "--L ${mt}"
 
     mem = task.memory.toGiga() - 4
     
-    if (target_regions.exists())
+    if ( type == "wes" )
     """
       count=`cat ${target_regions} | awk '\$1=="${mt}"' | wc -l`
       if [[ \$count > 0 ]]; then

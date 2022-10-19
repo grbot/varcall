@@ -22,7 +22,7 @@ Below is the sample sheet format. The sample sheet should be a tab delimmted tex
 
 For each dataset
 1) Create your sample sheet. E.g. `NA12878.samplesheet.txt` for the NA12878 dataset.
-2) Modify your `nextflow.config` to read the `NA12878.samplesheet.tsv` and specify the output directory e.g. `out_dir = "/spaces/gerrit/projects/adme/datasets/sahgp/nextflow-out"`
+2) Modify your `nextflow.config` to read the `NA12878.samplesheet.tsv` and specify the output directory e.g. `out_dir = "/spaces/gerrit/projects/adme/datasets/sahgp/nextflow-out"`. Also please set the type of sequencing protocol e.g. wes and wgs are currently supported. For wes the target_regions parameter needs to be set to a path, for wqs the parameter can be set to empty.
 3) Run the workflow
 ```
 nextflow -log nextflow.log run -w /spaces/gerrit/projects/adme/datasets/NA12878/nextflow-work -c nextflow.config main.nf -profile wits -with-report NA12878.report.html -with-trace -with-timeline NA12878.timeline.html -resume

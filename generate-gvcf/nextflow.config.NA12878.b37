@@ -13,6 +13,9 @@ params{
   
   build = "b37"
 
+  type = "wgs" // wgs or wes
+  target_regions = "" // if wes a path to the target regions need to be specified
+
 }
 
 process{

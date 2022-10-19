@@ -12,7 +12,8 @@ params{
   dbsnp_index = "/cbio/dbs/gatk/2.8/b37/dbsnp_138.b37.vcf.idx"
   
   build = "b37"
-
+  
+  type = "wes"
   target_regions = "/cbio/datasets/human/giab/exome/fastq/nexterarapidcapture_expandedexome_targetedregions.b37.bed"
 
 }

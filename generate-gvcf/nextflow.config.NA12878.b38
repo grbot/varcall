@@ -1,6 +1,6 @@
 params{
   project_name = "giab"
-  sample_sheet = "/users/gerrit/cade/varcall/generate-gvcf/NA12878.samplesheet.tsv"
+  sample_sheet = "/users/gerrit/scratch/varcall/generate-gvcf/NA12878.samplesheet.tsv"
   sample_coverage = "high"
   out_dir = "/cbio/users/gerrit/scratch/nextflow-out/"
 
@@ -19,6 +19,8 @@ params{
 
   build = "b38"
 
+  type = "wgs" // wgs or wes
+  target_regions = "" // if wes a path to the target regions need to be specified
 }
 
 process{
