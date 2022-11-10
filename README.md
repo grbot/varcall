@@ -35,14 +35,13 @@ params.target_regions     = ""
 ```
 
 ## NB: SAMPLE SHEET!
-```
 | SampleID	Gender	FastqR1	FastqR2	Flowcell	Lane	BAM	gVCF |
 | :---- | :---- | :---- | :---- | :---- | :---- | :---- | :---- |
 | NA12878	.	| NA12878_R1.fastq.gz	NA12878_R2.fastq.gz	HHTN2BBXX	6	NA12878-HHTN2BBXX.6.md.recal.cram	. |
 | NA12878_M	M	NA12878_R1.fastq.gz	NA12878_R2.fastq.gz	HHTN2BBXX	6	NA12878-HHTN2BBXX.6.md.recal_male.cram	. |
 | NA12878_F	F	NA12878_R1.fastq.gz	NA12878_R2.fastq.gz	HHTN2BBXX	6	NA12878-HHTN2BBXX.6.md.recal_female.cram	. |
 
-```
+
 ## VARIANT CALLING WORKFLOWS
 ### 1. Alignment to Reference Genome
 ```
