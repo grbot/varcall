@@ -34,12 +34,6 @@ params.bwa_threads        = "32"
 params.target_regions     = ""
 ```
 
-<style scoped>
-table {
-  font-size: 13px;
-}
-</style>
-
 ## NB: SAMPLE SHEET!
 The sample sheet should be an **8-column TAB separated file**, with headings as shown below. Not all workflows require the all columns to have information, e.g., the alignment workflow does not require a `BAM` file as input. Im such cases, a "." should be put in those columns.
 
