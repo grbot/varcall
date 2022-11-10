@@ -35,6 +35,8 @@ params.target_regions     = ""
 ```
 
 ## NB: SAMPLE SHEET!
+The sample sheet should be an **8-column** TAB separated file, with headings as shown below. Not all workflows require the all columns to have information, e.g., the alignment workflow does not require a `BAM` input. Im such case, a "." should be put in those columns.
+
 | SampleID | Gender | FastqR1 | FastqR2 | Flowcell | Lane | BAM | gVCF |
 | :---- | :---- | :---- | :---- | :---- | :---- | :---- | :---- |
 | NA12878 |	. | NA12878\_R1.fastq.gz | NA12878\_R2.fastq.gz | HHTN2BBXX	 | 6 | NA12878.md.recal.cram | . |
