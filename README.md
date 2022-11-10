@@ -35,7 +35,7 @@ params.target_regions     = ""
 ```
 
 ## NB: SAMPLE SHEET!
-| SampleID	Gender	FastqR1	FastqR2	Flowcell	Lane	BAM	gVCF |
+| SampleID | Gender | FastqR1 | FastqR2 | Flowcell | Lane | BAM | gVCF |
 | :---- | :---- | :---- | :---- | :---- | :---- | :---- | :---- |
 | NA12878 |	. | NA12878\_R1.fastq.gz | NA12878\_R2.fastq.gz | HHTN2BBXX	 | 6 | NA12878-HHTN2BBXX.6.md.recal.cram | . |
 | NA12878\_M | M | NA12878\_R1.fastq.gz | NA12878\_R2.fastq.gz	HHTN2BBXX |	6 |	NA12878-HHTN2BBXX.6.md.recal\_male.cram | . |
