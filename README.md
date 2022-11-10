@@ -37,7 +37,7 @@ params.target_regions     = ""
 ## NB: SAMPLE SHEET!
 The sample sheet should be an **8-column TAB separated file**, with headings as shown below. Not all workflows require the all columns to have information, e.g., the alignment workflow does not require a `BAM` file as input. Im such cases, a "." should be put in those columns.
 
-<font size="7"> 
+<span font-size="7"> 
 
 | SampleID | Gender | FastqR1 | FastqR2 | Flowcell | Lane | BAM | gVCF |
 | :---- | :---- | :---- | :---- | :---- | :---- | :---- | :---- |
@@ -45,7 +45,7 @@ The sample sheet should be an **8-column TAB separated file**, with headings as 
 | NA12878\_M | M | NA12878\_M\_R1.fastq.gz | NA12878\_M\_R2.fastq.gz | HHTN2BBXX | 6 | NA12878\_M.md.recal.cram | . |
 | NA12878\_F | F | NA12878\_F\_R1.fastq.gz | NA12878\_F\_R2.fastq.gz | HHTN2BBXX | 6 | NA12878\_F.md.recal.cram | . |
 
-</font>
+<\span>
 ## VARIANT CALLING WORKFLOWS
 ### 1. Alignment to Reference Genome
 ```
