@@ -1,3 +1,0 @@
-SampleID	Gender	FastqR1	FastqR2	BAM	CRAM	gVCF
-NA12878	.	.	.	/cbio/users/gerrit/scratch/nextflow-out/NA12878/NA12878.md.recal.bam	.	.
-NA12878_small	.	.	.	/cbio/users/gerrit/scratch/nextflow-out/NA12878_small/NA12878_small.md.recal.bam  .	.

@@ -1,3 +1,0 @@
-SampleID	Gender	FastqR1	FastqR2	Flowcell	Lane	BAM	gVCF
-NA12878.1	.	/cbio/datasets/human/giab/exome/fastq/NIST7035_TAAGGCGA_L001_R1_001_trimmed.fastq.gz	/cbio/datasets/human/giab/exome/fastq/NIST7035_TAAGGCGA_L001_R2_001_trimmed.fastq.gz	HHTN2BBXX	0	.	.
-NA12878.2	.	/cbio/datasets/human/giab/exome/fastq/NIST7035_TAAGGCGA_L002_R1_001_trimmed.fastq.gz	/cbio/datasets/human/giab/exome/fastq/NIST7035_TAAGGCGA_L002_R2_001_trimmed.fastq.gz	HHTN2BBXX	0	.	.

@@ -1,3 +1,0 @@
-SampleID	Gender	FastqR1	FastqR2	BAM	gVCF
-NA12878.1	F	.	.	.	/cbio/datasets/human/giab/exome/b37/gvcf/NA12878.1.g.vcf.gz	.
-NA12878.2	F	.	.	.	/cbio/datasets/human/giab/exome/b37/gvcf/NA12878.2.g.vcf.gz	.
