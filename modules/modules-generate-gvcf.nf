@@ -2,15 +2,19 @@
 nextflow.enable.dsl=2
 
 // PARAMETERS & INPUT
-ref = file(params.ref, type: 'file')
-known_indels_1 = file(params.known_indels_1, type: 'file')
-known_indels_2 = file(params.known_indels_2, type: 'file')
-dbsnp = file(params.dbsnp, type: 'file')
-outdir = file(params.outdir, type: 'dir')
+ref                       = file(params.ref, type: 'file')
+known_indels_1            = file(params.known_indels_1, type: 'file')
+known_indels_2            = file(params.known_indels_2, type: 'file')
+dbsnp                     = file(params.dbsnp, type: 'file')
+outdir                    = file(params.outdir, type: 'dir')
+build                     = params.build
+type                      = params.type
+sample_coverage           = params.sample_coverage
+target_regions            = file(params.target_regions, type: 'file')
 outdir.mkdir()
 
 // 
-if (params.build == "b37") {
+if (build == "b37") {
     x = "X"
     y = "Y"
     // Coordinates are from here: https://www.ncbi.nlm.nih.gov/grc/human
@@ -23,7 +27,7 @@ if (params.build == "b37") {
     y_par2 = "59034050-59363566"
     y_par2_target_default = "59034050-59034050"
     mt = "MT"
-} else if (params.build == "b38"){
+} else if (build == "b38"){
     x = "chrX"
     y = "chrY"
     // No autosomal region changes from build 37 to 38
@@ -44,32 +48,32 @@ if (params.build == "b37") {
 }
 
 // CALL_CONF
-if ( params.sample_coverage == "high" ) {
+if ( sample_coverage == "high" ) {
     call_conf = 30
-} else if ( params.sample_coverage == "low" ) {
+} else if ( sample_coverage == "low" ) {
     call_conf = 10
 } else {
     call_conf = 30
 }
 
 // RUN HAPLOTYPE CALLER ON AUTOSOMES
-process run_haplotype_caller_on_autosomes {
-    tag { "${params.project_name}.${sample_id}.${autosome}.rHCoA" }
+process run_haplotype_caller_auto {
+    tag { "${sample_id}.${autosome}.rHCoA" }
     label 'gatk'
     memory { 12.GB * task.attempt }
     cpus { 2 }
-    publishDir "${outdir}/${sample_id}", mode: 'copy', overwrite: false
+    publishDir "${outdir}/generate-gvcf/${sample_id}", mode: 'copy', overwrite: true
 
     input:
     tuple val(sample_id), val(gender), path(bam)
 	each autosome
     
     output:
-	tuple val(sample_id), path("${sample_id}.${autosome}.g.vcf.gz"), path("${sample_id}.${autosome}.g.vcf.gz.tbi"), emit: autosome_calls
+	tuple val(sample_id), path("${sample_id}.${autosome}.g.vcf.gz"), path("${sample_id}.${autosome}.g.vcf.gz.tbi"), emit: auto_calls
 
     script:
     mem = task.memory.toGiga() - 4
-    if (params.type == "wes") {
+    if (type == "wes") {
     } else {
         region = "--L ${autosome}"
     }
@@ -91,19 +95,19 @@ process run_haplotype_caller_on_autosomes {
 }
 
 // RUN HAPLOTYPE CALLER ON MALES
-process run_haplotype_caller_on_xy {
-    tag { "${params.project_name}.${sample_id}:${nonautosome}.rHCoNAmales" }
+process run_haplotype_caller_males {
+    tag { "${sample_id}:${nonautosome}.rHCoNAmales" }
     label 'gatk'
     memory { 12.GB * task.attempt }
     cpus { 2 }
-    publishDir "${outdir}/${sample_id}", mode: 'copy', overwrite: true
+    publishDir "${outdir}/generate-gvcf/${sample_id}", mode: 'copy', overwrite: true
 
     input:
     tuple val(sample_id), val(gender), path(bam)
     each nonautosome
     
     output:
-	tuple val(sample_id), path("${sample_id}.${base}.g.vcf.gz"), path("${sample_id}.${base}.g.vcf.gz.tbi"), emit: nonautosome_calls_males
+	tuple val(sample_id), path("${sample_id}.${base}.g.vcf.gz"), path("${sample_id}.${base}.g.vcf.gz.tbi"), emit: male_calls
 
     script:
     mem = task.memory.toGiga() - 4
@@ -111,8 +115,8 @@ process run_haplotype_caller_on_xy {
         case['x_par1_male']:
             base = "X_PAR1"
             ploidy = "2"
-            if (params.type == "wes") {
-                target_regions = file(params.target_regions)
+            if (type == "wes") {
+                target_regions = file(target_regions)
             } else {
                 region = "--L  ${x}:${x_par1}"
             }
@@ -121,8 +125,8 @@ process run_haplotype_caller_on_xy {
         case['x_par2_male']:
             base = "X_PAR2"
             ploidy = "2"
-            if (params.type == "wes") {
-                target_regions = file(params.target_regions)
+            if (type == "wes") {
+                target_regions = file(target_regions)
             } else {
                 region = "--L ${x}:${x_par2}"
             }
@@ -131,8 +135,8 @@ process run_haplotype_caller_on_xy {
         case['x_nonpar_male']:
             base = "X_nonPAR"
             ploidy = "1"
-            if (params.type == "wes") {
-                target_regions = file(params.target_regions)
+            if (type == "wes") {
+                target_regions = file(target_regions)
             } else {
                 region = "--L ${x} -XL ${x}:${x_par1} -XL ${x}:${x_par2}"
             }
@@ -141,8 +145,8 @@ process run_haplotype_caller_on_xy {
         case['y_par1_male']:
             base = "Y_PAR1"
             ploidy = "2"
-            if (params.type == "wes") {
-                target_regions = file(params.target_regions)
+            if (type == "wes") {
+                target_regions = file(target_regions)
             } else {
                 region = "--L ${y}:${y_par1}"
             }
@@ -151,8 +155,8 @@ process run_haplotype_caller_on_xy {
         case['y_par2_male']:
             base = "Y_PAR2"
             ploidy = "2"
-            if (params.type == "wes") {
-                target_regions = file(params.target_regions)
+            if (type == "wes") {
+                target_regions = file(target_regions)
             } else {
                 region = "--L ${y}:${y_par2}"
             }                    
@@ -161,8 +165,8 @@ process run_haplotype_caller_on_xy {
         case['y_nonpar_male']:
             base = "Y_nonPAR"
             ploidy = "1"
-            if (params.type == "wes") {
-                target_regions = file(params.target_regions)
+            if (type == "wes") {
+                target_regions = file(target_regions)
             } else {
                 region = "--L ${y} -XL ${y}:${y_par1} -XL ${y}:${y_par2}"
             }
@@ -187,23 +191,23 @@ process run_haplotype_caller_on_xy {
 }
 
 // RUN HAPLOTYPE CALLER ON FEMALES
-process run_haplotype_caller_on_xx {
-    tag { "${params.project_name}.${sample_id}:${x}.rHCoNAfemales" }
+process run_haplotype_caller_females {
+    tag { "${sample_id}:${x}.rHCoNAfemales" }
     label 'gatk'
     memory { 12.GB * task.attempt }
     cpus { 2 }
-    publishDir "${outdir}/${sample_id}", mode: 'copy', overwrite: true
+    publishDir "${outdir}/generate-gvcf/${sample_id}", mode: 'copy', overwrite: true
 
     input:
     tuple val(sample_id), val(gender), path(bam)
     
     output:
-	tuple val(sample_id), path("${sample_id}.${x}.g.vcf.gz"), path("${sample_id}.${x}.g.vcf.gz.tbi"), emit: nonautosome_calls_females
+	tuple val(sample_id), path("${sample_id}.${x}.g.vcf.gz"), path("${sample_id}.${x}.g.vcf.gz.tbi"), emit: female_calls
 
     script:
     mem = task.memory.toGiga() - 4
-    if (params.type == "wes") {
-        target_regions = file(params.target_regions)
+    if (type == "wes") {
+        target_regions = file(target_regions)
     } else {
         region = "--L ${x}"
     }
@@ -225,23 +229,23 @@ process run_haplotype_caller_on_xx {
 }
 
 // RUN HAPLOTYPE CALLER ON MT
-process run_haplotype_caller_on_mt {
-    tag { "${params.project_name}.${sample_id}:${mt}.rHCoNAmt" }
+process run_haplotype_caller_mt {
+    tag { "${sample_id}:${mt}.rHCoNAmt" }
     label 'gatk'
     memory { 12.GB * task.attempt }
     cpus { 2 }
-    publishDir "${outdir}/${sample_id}", mode: 'copy', overwrite: true
+    publishDir "${outdir}/generate-gvcf/${sample_id}", mode: 'copy', overwrite: true
 
     input:
     tuple val(sample_id), val(gender), path(bam)
     
     output:
-	tuple val(sample_id), path("${sample_id}.${mt}.g.vcf.gz"), path("${sample_id}.${mt}.g.vcf.gz.tbi"), emit: nonautosome_calls_mt
+	tuple val(sample_id), path("${sample_id}.${mt}.g.vcf.gz"), path("${sample_id}.${mt}.g.vcf.gz.tbi"), emit: mt_calls
 
     script:
     mem = task.memory.toGiga() - 4
-    if (params.type == "wes") {
-        target_regions = file(params.target_regions)
+    if (type == "wes") {
+        target_regions = file(target_regions)
     } else {
         region = "--L ${mt}"
     }
@@ -262,19 +266,18 @@ process run_haplotype_caller_on_mt {
     """
 }
 
-// autosome_calls.mix(mt_calls,x_par1_calls,x_nonpar_calls,x_par2_calls,x_calls,y_par1_calls,y_nonpar_calls,y_par2_calls).groupTuple().set{all_calls}
 
-process run_sort_xy_gVCFs {
-    tag { "${params.project_name}.${sample_id}.sMgVCF" }
+process run_sort_male_gvcfs {
+    tag { "${sample_id}.sMgVCF" }
     label 'gatk'
     memory { 8.GB * task.attempt }
-    publishDir "${params.outdir}/${sample_id}", mode: 'copy', overwrite: false
+    publishDir "${outdir}/generate-gvcf/${sample_id}", mode: 'copy', overwrite: true
 
     input:
     tuple val(sample_id), path(vcf), path(index) 
     
     output:
-        tuple val(sample_id), path("${sample_id}.X.g.vcf.gz"), path("${sample_id}.Y.g.vcf.gz"), path("${sample_id}.X.g.vcf.gz.tbi"), path("${sample_id}.Y.g.vcf.gz.tbi"), emit: nonautosome_calls_males_combined
+        tuple val(sample_id), path("${sample_id}.X.g.vcf.gz"), path("${sample_id}.Y.g.vcf.gz"), path("${sample_id}.X.g.vcf.gz.tbi"), path("${sample_id}.Y.g.vcf.gz.tbi"), emit: male_calls_combined
     
     script:
     mem = task.memory.toGiga() - 4
@@ -294,12 +297,12 @@ process run_sort_xy_gVCFs {
     """
 }
 
-process run_combine_gVCFs {
-    tag { "${params.project_name}.${sample_id}.cCgVCF" }
+process run_combine_sample_gvcfs {
+    tag { "${sample_id}.cCgVCF" }
     label 'gatk'
     memory { 8.GB * task.attempt }
 
-    publishDir "${params.outdir}/${sample_id}", mode: 'copy', overwrite: false
+    publishDir "${outdir}/generate-gvcf/${sample_id}", mode: 'copy', overwrite: true
     
     input:
     tuple val(sample_id), path(gvcfs), path(indexes)
@@ -309,7 +312,7 @@ process run_combine_gVCFs {
   
     script:
     mem = task.memory.toGiga() - 4
-    if (params.build == 'b37') {
+    if (build == 'b37') {
         chr = ''
         mt = 'MT'
     } else if(build == 'b38') {
@@ -347,15 +350,16 @@ process run_combine_gVCFs {
     gatk --java-options "-XX:+UseSerialGC -Xms1g -Xmx${mem}g" GatherVcfs \
         -I ${sample_id}.gvcf.list \
         -O ${sample_id}.g.vcf.gz
-
+ 
+    # GatherVCF does not index the VCF. The VCF will be indexed in the next tabix operation.
     tabix -p vcf ${sample_id}.g.vcf.gz
     """
 }
 
 process run_create_gvcf_md5sum {
-    tag { "${params.project_name}.${sample_id}.cGMD5" }
+    tag { "${sample_id}.cGMD5" }
     memory { 4.GB * task.attempt }
-    publishDir "${params.outdir}/${sample_id}", mode: 'move', overwrite: false
+    publishDir "${outdir}/generate-gvcf/${sample_id}", mode: 'move', overwrite: true
 
     input:
     tuple val(sample_id), path(gvcf), path(index)
@@ -367,20 +371,4 @@ process run_create_gvcf_md5sum {
     md5sum ${gvcf} > ${gvcf}.md5
     md5sum ${index} > ${index}.md5
     """
-}
-
-workflow.onComplete {
-    println ( workflow.success ? """
-        Pipeline execution summary
-        ---------------------------
-        Completed at: ${workflow.complete}
-        Duration    : ${workflow.duration}
-        Success     : ${workflow.success}
-        workDir     : ${workflow.workDir}
-        exit status : ${workflow.exitStatus}
-        """ : """
-        Failed: ${workflow.errorReport}
-        exit status : ${workflow.exitStatus}
-        """
-    )
 }

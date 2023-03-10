@@ -2,85 +2,44 @@
 nextflow.enable.dsl=2
 
 // PARAMETERS & INPUT
-ref = file(params.ref, type: 'file')
+ref            = file(params.ref, type: 'file')
 known_indels_1 = file(params.known_indels_1, type: 'file')
 known_indels_2 = file(params.known_indels_2, type: 'file')
-dbsnp = file(params.dbsnp, type: 'file')
-outdir = file(params.outdir, type: 'dir')
+dbsnp          = file(params.dbsnp, type: 'file')
+project_name   = params.project_name
+outdir         = file(params.outdir, type: 'dir')
 outdir.mkdir()
 
-process print_sample_info {
-    tag { sample_id }
-    echo true
-
-    input:
-    tuple val(sample_id), val(gender), path(fastq_r1), path(fastq_r2), val(flowcell), val(lane), path(bam), path(gvcf)
-
-    script:
-    """
-    printf "[sample_info] sample: ${sample_id}\tFastqR1: ${fastq_r1}\tFastqR2: ${fastq_r2}\tFlowcell: ${flowcell}\tLane: ${lane}\n"
-    """
-}
-
-process log_tool_version_samtools_bwa {
-    tag { "tool_ver" }
-    label 'bwa_samtools'
-    echo true
-    publishDir "${outdir}/", mode: 'copy', overwrite: false
-
-    output:
-    path("tool.samtools.bwa.version"), emit: tool_version_samtools_bwa
-
-    script:
-    """
-    samtools --version > tool.samtools.bwa.version
-    bwa 2>&1 | head -n 5 >> tool.samtools.bwa.version
-    """
-}
-
-process log_tool_version_gatk {
-    tag { " tool_ver" }
-    label 'gatk'
-    echo true
-    publishDir "${outdir}/", mode: 'copy', overwrite: false
-    
-    output:
-    path("tool.gatk.version"), emit: tool_version_gatk
-    
-    script:
-    mem = task.memory.toGiga() - 3
-    """
-    gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms500m -Xmx${mem}g" --version > tool.gatk.version 2>&1
-    """
-}
-
 process run_bwa {
-    tag { "${params.project_name}.${sample_id}.rBwa" }
+    tag { "${sample_id}.rBwa" }
     label 'bwa_samtools'
     memory { 64.GB * task.attempt }
     cpus { "${params.bwa_threads}" }
-    publishDir "${outdir}/${sample_id}", mode: 'copy', overwrite: false
+    // publishDir "${outdir}/align/${project_name}/${sample_id}", mode: 'copy', overwrite: true
     
     input:
-    tuple val(sample_id), val(gender), path(fastq_r1), path(fastq_r2), val(flowcell), val(lane), path(bam), path(gvcf)
+    tuple val(sample_id), path(fastq_r1), path(fastq_r2), val(flowcell), val(lane)
 
     output:
     tuple val(sample_id), path("${sample_id}.bam"), emit: raw_bam
       
     script:
-    readgroup_info="@RG\\tID:${flowcell}.${lane}\\tLB:LIBA\\tSM:${sample_id}\\tPL:Illumina"
+    // readgroup_info="@RG\\tID:${flowcell}.${lane}\\tLB:LIBA\\tSM:${sample_id}\\tPL:Illumina"
       
-    if (lane == "0") {
-        sample_id = "${sample_id}"
-    } else {
-  	    sample_id = "${sample_id}-${flowcell}.${lane}"
-    }
+    // if (lane == ".") {
+    //     sample_id = "${sample_id}"
+    // } else {
+  	//     sample_id = "${sample_id}-${flowcell}.${lane}"
+    // }
     
     nr_threads = task.cpus - 1
 
     """
+    flowcell=`zcat ${fastq_r1} | head -n 1 | awk -F':' '{ print \$3 }'`
+    lane=`zcat ${fastq_r1} | head -n 1 | awk -F':' '{ print \$4 }'`
+    readgroup_info="@RG\\tID:\$flowcell.\$lane\\tLB:LIBA\\tSM:${sample_id}\\tPL:Illumina"
     bwa mem \
-        -R \"${readgroup_info}\" \
+        -R \"\$readgroup_info\" \
         -t ${nr_threads}  \
         -K 100000000 \
         -Y \
@@ -95,10 +54,10 @@ process run_bwa {
 }
 
 process run_mark_duplicates {
-    tag { "${params.project_name}.${sample_id}.rMD" }
+    tag { "${sample_id}.rMD" }
     label 'gatk'
     memory { 16.GB * task.attempt }
-    publishDir "${outdir}/${sample_id}", mode: 'copy', overwrite: false
+    // publishDir "${outdir}/align/${project_name}/${sample_id}", mode: 'copy', overwrite: true
 
     input:
     tuple val(sample_id), path(bam)
@@ -123,10 +82,10 @@ process run_mark_duplicates {
 }
 
 process run_create_recalibration_table {
-    tag { "${params.project_name}.${sample_id}.rCRT" }
+    tag { "${sample_id}.rCRT" }
     label 'gatk'
     memory { 16.GB * task.attempt }
-    publishDir "${outdir}/${sample_id}", mode: 'copy', overwrite: false
+    // publishDir "${outdir}/align/${project_name}/${sample_id}", mode: 'copy', overwrite: true
 
     input:
     tuple val(sample_id), path(bam), path(index)
@@ -151,11 +110,11 @@ process run_create_recalibration_table {
 }
 
 process run_recalibrate_bam {
-    tag { "${params.project_name}.${sample_id}.rRB" }
+    tag { "${sample_id}.rRB" }
     label 'gatk'
     memory { 16.GB * task.attempt }
     cpus { 2 }
-    publishDir "${outdir}/${sample_id}", mode: 'copy', overwrite: false
+    // publishDir "${outdir}/align/${project_name}/${sample_id}", mode: 'copy', overwrite: true
 
     input:
     tuple val(sample_id), path(bam), path(index), file(recal_table)
@@ -179,10 +138,10 @@ process run_recalibrate_bam {
 }
 
 process bam_to_cram {
-    tag { "${params.project_name}.${sample_id}.btC" }
+    tag { "${sample_id}.btC" }
     label 'bwa_samtools'
     memory { 4.GB * task.attempt }
-    publishDir "${outdir}/${sample_id}", mode: 'copy', overwrite: false
+    publishDir "${outdir}/align/${project_name}/${sample_id}", mode: 'copy', overwrite: false
 
     input:
     tuple val(sample_id), path(bam), path(index)
@@ -198,11 +157,11 @@ process bam_to_cram {
 }
 
 process run_cram_flagstat {
-    tag { "${params.project_name}.${sample_id}.rCF" }
+    tag { "${sample_id}.rCF" }
     label 'bwa_samtools'
     memory { 4.GB * task.attempt }
     cpus { "${params.bwa_threads}" }
-    publishDir "${outdir}/${sample_id}", mode: 'copy', overwrite: false
+    publishDir "${outdir}/align/${project_name}/${sample_id}", mode: 'copy', overwrite: false
 
     input:
     tuple val(sample_id), path(cram), path(index)
@@ -218,9 +177,9 @@ process run_cram_flagstat {
 }
 
 process create_cram_md5sum {
-    tag { "${params.project_name}.${sample_id}.cCMD5" }
+    tag { "${sample_id}.cCMD5" }
     memory { 4.GB * task.attempt }
-    publishDir "${outdir}/${sample_id}", mode: 'copy', overwrite: false
+    publishDir "${outdir}/align/${project_name}/${sample_id}", mode: 'copy', overwrite: false
 
     input:
     tuple val(sample_id), path(cram), path(index), path(flagstat)
@@ -233,20 +192,4 @@ process create_cram_md5sum {
     md5sum ${index} > ${index}.md5
     md5sum ${flagstat} > ${flagstat}.md5
     """
-}
-
-workflow.onComplete {
-    println ( workflow.success ? """
-        Pipeline execution summary
-        ---------------------------
-        Completed at: ${workflow.complete}
-        Duration    : ${workflow.duration}
-        Success     : ${workflow.success}
-        workDir     : ${workflow.workDir}
-        exit status : ${workflow.exitStatus}
-        """ : """
-        Failed: ${workflow.errorReport}
-        exit status : ${workflow.exitStatus}
-        """
-    )
 }
