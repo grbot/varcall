@@ -3,14 +3,21 @@ nextflow.enable.dsl=2
 
 //========== PARAMETERS & INPUT ==========//
 // ALIGNMENT
-params.sample_sheet       = "/home/phelelani/nf-workflows/varcall/data/samplesheets/samplesheet_sahgp_test.tsv"
+params.sample_sheet       = "/home/phelelani/nf-workflows/varcall/data/samplesheets/samplesheet_scd.tsv"
 params.outdir             = "/external/diskC/phelelani/varcall_out"
-params.project_name       = "sahgp"
-params.cohort_id          = ""
+params.project_name       = "scd"
+params.cohort_id          = "scd"
 params.sample_coverage    = "low"
 
 params.workflow           = null
 params.type               = "wgs"
+params.target_regions     = "/"
+
+params.db_path            = "/external/diskC/phelelani/data/b38db"
+params.db_update          = "no"
+params.db_import          = "no"
+
+params.gvcf               = "/home/phelelani/nf-workflows/varcall/WF-GENERATE_GVCFS/combine-gvcfs/TEST_COHORT.g.vcf.gz"
 
 // // BUILD 37
 // params.build              = "b37"
@@ -37,17 +44,10 @@ params.golden_indels      = "/external/diskC/phelelani/data/gatk/bundle/b38/Mill
 params.memory_per_thread  = "500M"
 params.bwa_threads        = "32"
 
-params.gvcf               = "/home/phelelani/nf-workflows/varcall/WF-GENERATE_GVCFS/combine-gvcfs/TEST_COHORT.g.vcf.gz"
 params.ts_filter_level_snps  = 99.5    
 params.ts_filter_level_indels = 99.0    
 params.max_gaussians_snps = 4
 params.max_gaussians_indels = 8
-
-params.db_path            = "/external/diskC/phelelani/data/b38db"
-params.db_update          = "no"
-params.db_import          = "no"
-
-params.target_regions     = "/"
 
 //----- COMMON  WORKFLOWS PARAMETER
 workflow                  = params.workflow
@@ -91,7 +91,7 @@ samples.map { [ it[0], it[2], it[3], it[4], it[5]] }
     .set { samples_align }
 
 // GET INPUT FOR GENERATE-GVCFS WORKFLOW: SAMPLE_ID, GENDER, BAM
-samples.map { [ it[0], it[1], it[6] ] }
+samples.map { [ it[0], it[1], it[6]] }
     .set { samples_generate_gvcfs }
 
 // GET INPUT (GENDER BASED) FOR GENERATE-GVCFS WORKFLOW: SAMPLE_ID, GENDER, BAM
@@ -108,6 +108,7 @@ gvcf = Channel.fromPath([params.gvcf, "${params.gvcf}.tbi"]).toList()
 
 //----- INCLUDE MODULES
 // GENERAL MODULES
+include { nodeOption } from './modules/modules-location-aware.nf'
 include { print_sample_info; log_tool_version_samtools_bwa; log_tool_version_gatk } from './modules/modules-general.nf'
 // ALIGNMENT MODULES
 include { run_bwa; run_mark_duplicates; run_create_recalibration_table;
@@ -134,6 +135,7 @@ include { run_genotype_gvcf_on_genome_gvcf; run_concat_vcf; run_vqsr_on_snps; ru
 include { run_combine_gvcfs; run_concat_gvcfs} from './modules/modules-combine-gvcfs.nf'
 include { run_genomics_db_import_new; run_genomics_db_import_update } from './modules/modules-genomics-db-import.nf'
 
+// samples_generate_gvcfs_males.subscribe { println nodeOption(it[2]) }
 
 // WORKFLOWS - NOT TESTED THOROUGHLY (NEED ORIGINAL FASTQ FILES)
 workflow ALIGN {
@@ -164,13 +166,9 @@ workflow GENERATE_GVCFS {
     // GENERATE_GVCFS: NO SEX
     run_haplotype_caller_auto_nosex(samples_nosex, chroms_auto)
     run_haplotype_caller_mt_nosex(samples_nosex)
-    run_haplotype_caller_auto_nosex.out.auto_calls
-        .groupTuple()
-        .join(run_haplotype_caller_mt_nosex.out.mt_calls)
-        .flatten()
-        .collect()
-        .map { it -> [ it[0], it.findAll { it =~ 'g.vcf.gz$' }, it.findAll { it =~ 'g.vcf.gz.tbi$' } ] }
-        .view()
+    run_haplotype_caller_auto_nosex.out.auto_calls.groupTuple()
+        .join(run_haplotype_caller_mt_nosex.out.mt_calls.groupTuple())
+        .map { it -> [ it[0], it.flatten().findAll { it =~ 'g.vcf.gz$' }, it.flatten().findAll { it =~ 'g.vcf.gz.tbi$' } ] }
         .set { nosex }
     run_combine_sample_gvcfs_nosex(nosex)
     run_create_gvcf_md5sum_nosex(run_combine_sample_gvcfs_nosex.out.combined_calls)
@@ -180,13 +178,10 @@ workflow GENERATE_GVCFS {
     run_haplotype_caller_mt_males(samples_males)
     run_haplotype_caller_males(samples_males, chroms_par)
     run_sort_male_gvcfs(run_haplotype_caller_males.out.male_calls.groupTuple())
-    run_haplotype_caller_auto_males.out.auto_calls
-        .groupTuple()
-        .join(run_haplotype_caller_mt_males.out.mt_calls)
-        .join(run_sort_male_gvcfs.out.male_calls_combined)
-        .flatten()
-        .collect()
-        .map { it -> [ it[0], it.findAll { it =~ 'g.vcf.gz$' }, it.findAll { it =~ 'g.vcf.gz.tbi$' } ] }
+    run_haplotype_caller_auto_males.out.auto_calls.groupTuple()
+        .join(run_haplotype_caller_mt_males.out.mt_calls.groupTuple())
+        .join(run_sort_male_gvcfs.out.male_calls_combined.groupTuple())
+        .map { it -> [ it[0], it.flatten().findAll { it =~ 'g.vcf.gz$' }, it.flatten().findAll { it =~ 'g.vcf.gz.tbi$' } ] }
         .set { males }
     run_combine_sample_gvcfs_males(males)
     run_create_gvcf_md5sum_males(run_combine_sample_gvcfs_males.out.combined_calls)
@@ -195,13 +190,10 @@ workflow GENERATE_GVCFS {
     run_haplotype_caller_auto_females(samples_females, chroms_auto)
     run_haplotype_caller_mt_females(samples_females)
     run_haplotype_caller_females(samples_females)
-    run_haplotype_caller_auto_females.out.auto_calls
-        .groupTuple()
-        .join(run_haplotype_caller_mt_females.out.mt_calls)
-        .join(run_haplotype_caller_females.out.female_calls)
-        .flatten()
-        .collect()
-        .map { it -> [ it[0], it.findAll { it =~ 'g.vcf.gz$' }, it.findAll { it =~ 'g.vcf.gz.tbi$' } ] }
+    run_haplotype_caller_auto_females.out.auto_calls.groupTuple()
+        .join(run_haplotype_caller_mt_females.out.mt_calls.groupTuple())
+        .join(run_haplotype_caller_females.out.female_calls.groupTuple())
+        .map { it -> [ it[0], it.flatten().findAll { it =~ 'g.vcf.gz$' }, it.flatten().findAll { it =~ 'g.vcf.gz.tbi$' } ] }
         .set { females }
     run_combine_sample_gvcfs_females(females)
     run_create_gvcf_md5sum_females(run_combine_sample_gvcfs_females.out.combined_calls)
@@ -224,7 +216,7 @@ workflow COMBINE_GVCFS {
         .collect()
         .map { it -> [ it.findAll { it =~ 'g.vcf.gz$' }, it.findAll { it =~ 'g.vcf.gz.tbi$' } ] }
         .set { cohort_calls }
-    run_concat_gvcfs(cohort_calls).view()
+    run_concat_gvcfs(cohort_calls)
 }
 
 // GENOMICS DB IMPORT
@@ -278,7 +270,7 @@ workflow GENOME_CALLING {
         .map { it -> [ it.findAll { it =~ '.vcf.gz$' }, it.findAll { it =~ '.vcf.gz.tbi$' } ] }
         .set { concat_ready }
     run_concat_vcf(concat_ready)
-    run_vqsr_on_snps(run_concat_vcf.out.combined_calls).view()
+    run_vqsr_on_snps(run_concat_vcf.out.combined_calls)
     run_apply_vqsr_on_snps(run_vqsr_on_snps.out.snps_vqsr_recal)
     run_vqsr_on_indels(run_concat_vcf.out.combined_calls)
     run_apply_vqsr_on_indels(run_vqsr_on_indels.out.indel_vqsr_recal)
