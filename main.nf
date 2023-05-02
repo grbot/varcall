@@ -15,7 +15,6 @@ params.target_regions     = "/"
 
 params.db_path            = "/external/diskC/phelelani/data/b38db"
 params.db_update          = "no"
-params.db_import          = "no"
 
 params.gvcf               = "/home/phelelani/nf-workflows/varcall/WF-GENERATE_GVCFS/combine-gvcfs/TEST_COHORT.g.vcf.gz"
 
@@ -53,7 +52,6 @@ params.max_gaussians_indels = 8
 workflow                  = params.workflow
 db                        = file(params.db_path, type: 'dir')
 db_update                 = params.db_update
-db_import                 = params.db_import
 
 // GENERATE GVCFS WORKFLOW
 if (params.build == "b37") {
@@ -101,19 +99,19 @@ samples_generate_gvcfs.filter { !(it[1] =~ 'F|M') }.set { samples_generate_gvcfs
 
 // GET INPUT FOR COMBINE-GVCFS WORKFLOW: SAMPLE_ID, GVCF
 samples.map { [ it[0], it[7] ] }
-    .set { samples_combine_gvcfs }
+    .set { samples_gvcfs_list }
 
 // GVCF FILE ---CHECK<<<<<<<
 gvcf = Channel.fromPath([params.gvcf, "${params.gvcf}.tbi"]).toList()
 
 //----- INCLUDE MODULES
-// GENERAL MODULES
+// GENERAL
 include { nodeOption } from './modules/modules-location-aware.nf'
 include { print_sample_info; log_tool_version_samtools_bwa; log_tool_version_gatk } from './modules/modules-general.nf'
-// ALIGNMENT MODULES
+// ALIGNMENT
 include { run_bwa; run_mark_duplicates; run_create_recalibration_table;
          run_recalibrate_bam; bam_to_cram; run_cram_flagstat; create_cram_md5sum } from './modules/modules-align.nf'
-// GENERATE GENOME-GVCFS MODULES
+// GENERATE GENOME GVCFS
 include { run_haplotype_caller_auto as run_haplotype_caller_auto_nosex;
          run_haplotype_caller_auto as run_haplotype_caller_auto_males;
          run_haplotype_caller_auto as run_haplotype_caller_auto_females;
@@ -129,15 +127,15 @@ include { run_haplotype_caller_auto as run_haplotype_caller_auto_nosex;
          run_create_gvcf_md5sum as run_create_gvcf_md5sum_nosex;
          run_create_gvcf_md5sum as run_create_gvcf_md5sum_males;
          run_create_gvcf_md5sum as run_create_gvcf_md5sum_females } from './modules/modules-generate-gvcf.nf'
+// COMBINE GVCFS
+include { run_combine_gvcfs; run_concat_gvcfs} from './modules/modules-combine-gvcfs.nf'
+// GENOMICS DB IMPORT
+include { run_genomics_db_import_new; run_backup_genomic_db; run_genomics_db_import_update } from './modules/modules-genomics-db-import.nf'
 // GENOME CALLING
 include { run_genotype_gvcf_on_genome_gvcf; run_concat_vcf; run_vqsr_on_snps; run_apply_vqsr_on_snps;
          run_vqsr_on_indels; run_apply_vqsr_on_indels } from './modules/modules-genome-calling.nf'
-include { run_combine_gvcfs; run_concat_gvcfs} from './modules/modules-combine-gvcfs.nf'
-include { run_genomics_db_import_new; run_genomics_db_import_update } from './modules/modules-genomics-db-import.nf'
 
-// samples_generate_gvcfs_males.subscribe { println nodeOption(it[2]) }
-
-// WORKFLOWS - NOT TESTED THOROUGHLY (NEED ORIGINAL FASTQ FILES)
+// ALIGN WORKFLOW - NOT TESTED THOROUGHLY (NEED ORIGINAL FASTQ FILES)
 workflow ALIGN {
     take:
     samples
@@ -154,6 +152,7 @@ workflow ALIGN {
     create_cram_md5sum(run_cram_flagstat.out.cram_stats)
 }
 
+// GENERATE GVCFS WORKFLOW - TESTED THOROUGHLY AND WORKS FINE
 workflow GENERATE_GVCFS {
     take:
     samples_nosex
@@ -172,7 +171,6 @@ workflow GENERATE_GVCFS {
         .set { nosex }
     run_combine_sample_gvcfs_nosex(nosex)
     run_create_gvcf_md5sum_nosex(run_combine_sample_gvcfs_nosex.out.combined_calls)
-
     // GENERATE_GVCFS: MALES
     run_haplotype_caller_auto_males(samples_males, chroms_auto)
     run_haplotype_caller_mt_males(samples_males)
@@ -185,7 +183,6 @@ workflow GENERATE_GVCFS {
         .set { males }
     run_combine_sample_gvcfs_males(males)
     run_create_gvcf_md5sum_males(run_combine_sample_gvcfs_males.out.combined_calls)
-
     // GENERATE_GVCFS: FEMALES
     run_haplotype_caller_auto_females(samples_females, chroms_auto)
     run_haplotype_caller_mt_females(samples_females)
@@ -199,15 +196,15 @@ workflow GENERATE_GVCFS {
     run_create_gvcf_md5sum_females(run_combine_sample_gvcfs_females.out.combined_calls)
 }
 
-// COMBINE GVCFS
+// COMBINE GVCFS - SKIPPING TESTING 
 workflow COMBINE_GVCFS {
     take:
-    samples_combine_gvcfs
+    samples_gvcfs_list
     chrom_all
     
     main:
     // log_tool_version_gatk()
-    samples_combine_gvcfs
+    samples_gvcfs_list
         .collectFile() { item -> [ 'gvcf.list', "${item.get(1)}" + '\n' ] }
         .set { gvcf_list }
     run_combine_gvcfs( gvcf_list, chrom_all)
@@ -222,31 +219,32 @@ workflow COMBINE_GVCFS {
 // GENOMICS DB IMPORT
 workflow GENOMICS_DB_IMPORT {
     take:
-    samples_combine_gvcfs
+    samples_gvcfs_list
     chrom_all
-        
+
     main:
-        switch (db_update) {
+    switch (db_update) {
         case['yes']:
             if ( db.exists() ) {
                 println "DB:${db} exists. Making a backup copy before update."
-                samples_combine_gvcfs
+                run_backup_genomic_db()
+                samples_gvcfs_list
                     .collectFile() { item -> [ 'gvcf.list', "${item.get(1)}" + '\n' ] }
                     .set { gvcf_list }
-                run_genomics_db_import_update(gvcf_list, chroms_all)                
+                run_genomics_db_import_update(gvcf_list, chroms_all, run_backup_genomic_db.out.backup_status)
             } else if ( !db.exists() ) {
                 println "Could not find existing DB:${db} please specify the correct DB path."
                 exit 1
             }
             break
-            // =====   
+            // =====
         case['no']:
             if ( db.exists() ) {
                 println "DB exists:${db}. Please check if you want to create new or update existing DB. If so please delete or backup first."
                 exit 1
             } else if ( !db.exists() ) {
                 println "Creating new DB:${db}"
-                samples_combine_gvcfs
+                samples_gvcfs_list
                     .collectFile() { item -> [ 'gvcf.list', "${item.get(1)}" + '\n' ] }
                     .set { gvcf_list }
                 run_genomics_db_import_new(gvcf_list, chroms_all)
@@ -289,11 +287,11 @@ workflow {
             break
             // =====
         case['combine-gvcfs']:
-            COMBINE_GVCFS(samples_combine_gvcfs, chroms_all)
+            COMBINE_GVCFS(samples_gvcfs_list, chroms_all)
             break
             // =====
         case['genomics-db-import']:
-            GENOMICS_DB_IMPORT(samples_combine_gvcfs, chroms_all)
+            GENOMICS_DB_IMPORT(samples_gvcfs_list, chroms_all)
             break
             // =====
         case['genome-calling']:
