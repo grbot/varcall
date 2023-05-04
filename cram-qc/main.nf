@@ -23,6 +23,9 @@ Channel.fromPath( file(params.sample_sheet) )
 
 ref_seq = Channel.fromPath(params.ref_seq).toList()
 ref_dict = Channel.fromPath(params.ref_dict).toList()
+dup_cutoff = (params.dup_cutoff)
+map_cutoff = (params.map_cutoff)
+freemix_cutoff = (params.freemix_cutoff)
 
 process log_tool_version_multiqc {
     tag { "${params.project_name}.ltVm" }
@@ -109,6 +112,7 @@ process run_flagstat {
 
     output:
        file("${bam_file}.flagstat") into flagstat_file
+       set val(sample_id), file("${bam_file}.flagstat") into flagstat
 
     script:
     """
@@ -170,6 +174,7 @@ if (params.build == "b37") {
   
       output:
          file("${sample_id}.result.*") into verifybamid2_file
+         set val(sample_id), file("${sample_id}.result.selfSM") into verifybamid2
   
       script:
       """
@@ -192,9 +197,10 @@ if (params.build == "b38") {
       input:
       set val(sample_id), file(bam_file), file(bam_index) from samples_4
       file (ref) from ref_seq
-  
+        
       output:
-         file("${sample_id}.result.*") into verifybamid2_file 
+         file("${sample_id}.result.*") into verifybamid2_file
+         set val(sample_id), file("${sample_id}.result.selfSM") into verifybamid2
       
       script:
       """
@@ -250,6 +256,85 @@ process runMultiQC{
 
     """
     multiqc .
+    """
+}
+
+process check_dup_cov {
+    tag { "${params.project_name}.${sample_id}.cDC" }
+    echo true
+    publishDir "${params.out_dir}/cram-qc/${sample_id}", mode: 'copy', overwrite: false
+    input:
+    set val(sample_id), file(flagstat_file) from flagstat
+
+    output:
+       file("${sample_id}.dup_cov") into dup_cov
+
+    script:
+    """
+    total=`cat $flagstat_file |  grep "total" | cut -d ' ' -f1`
+    mapped=`cat $flagstat_file |  grep "mapped (" | cut -d ' ' -f1`
+    dup=`cat $flagstat_file |  grep "duplicates" | cut -d ' ' -f1`
+    perc_mapped=\$((mapped*100/total))
+    perc_dup=\$((dup*100/total))
+
+     if [ \$perc_mapped -gt ${map_cutoff} ]
+     then
+       echo -e "${sample_id}\tMapping cutoff\tPASS" > ${sample_id}.dup_cov 
+     else
+       echo -e "${sample_id}\tMapping cutoff\tFAIL" > ${sample_id}.dup_cov
+     fi
+	
+     if [ \$perc_dup -lt ${dup_cutoff} ]
+     then
+       echo -e "${sample_id}\tDuplication cutoff\tPASS" >> ${sample_id}.dup_cov
+     else
+       echo -e "${sample_id}\tDuplication cutoff\tFAIL" >> ${sample_id}.dup_cov
+     fi
+
+    """
+}
+
+process check_freemix {
+    tag { "${params.project_name}.${sample_id}.cFM" }
+    echo true
+    publishDir "${params.out_dir}/cram-qc/${sample_id}", mode: 'copy', overwrite: false
+    input:
+    set val(sample_id), file(verifybamid2_file) from verifybamid2
+
+    output:
+       file("${sample_id}.freemix") into freemix
+
+    script:
+    """
+    freemix=`cat $verifybamid2_file | tail -1 | cut -f 7`
+    freemix_mod=`echo \$freemix | sed 's/e/*10^/'`
+  
+ 
+    if [ \$(echo "\$freemix_mod < $freemix_cutoff"|bc) -eq 1 ]
+     then
+       echo -e "${sample_id}\tFreemix cutof\tPASS" > ${sample_id}.freemix 
+     else
+       echo -e "${sample_id}\tFreemix cutoff\tFAIL" > ${sample_id}.freemix
+     fi
+
+    """
+}
+
+checks = dup_cov.mix(freemix)
+
+process combine_checks {
+    tag { "${params.project_name}.cC" }
+    echo true
+    publishDir "${params.out_dir}/cram-qc/", mode: 'copy', overwrite: false
+    input:
+      file('*') from checks.collect()
+
+    output:
+       file ("checks.tsv")
+
+    script:
+    """
+      cat * | sort -k1 > checks.tsv
     """
 }
 

@@ -1,6 +1,8 @@
 # Intro
 
-This nextflow pipeline runs `samtools flagstat`, `samtools stats`, `mosdepth` and `verifybamid2` on BAMs/CRAMs and combines the reports in a MultiQC report.
+This nextflow pipeline runs `samtools flagstat`, `samtools stats`, `mosdepth` and `verifybamid2` on BAMs/CRAMs and combines the reports in a MultiQC report. 
+
+A combined check file `checks.tsv` is also generated and contains checks done on mapping coverage, duplication levels and freemix values. Specify the corresponding thresholds in the nextflow config. See `nextflow.NA12878.config`.
 
 
 ## Sample sheet format
