@@ -13,7 +13,8 @@ params.workflow           = null
 params.type               = "wgs"
 params.target_regions     = "/"
 
-params.db_path            = "/external/diskC/phelelani/data/b38db"
+//params.db_path            = "/external/diskC/phelelani/data/b38db"
+params.db_path            = "/local/phelelani/b38db"
 params.db_update          = "no"
 
 params.gvcf               = "/home/phelelani/nf-workflows/varcall/WF-GENERATE_GVCFS/combine-gvcfs/TEST_COHORT.g.vcf.gz"
@@ -106,7 +107,6 @@ gvcf = Channel.fromPath([params.gvcf, "${params.gvcf}.tbi"]).toList()
 
 //----- INCLUDE MODULES
 // GENERAL
-include { nodeOption } from './modules/modules-location-aware.nf'
 include { print_sample_info; log_tool_version_samtools_bwa; log_tool_version_gatk } from './modules/modules-general.nf'
 // ALIGNMENT
 include { run_bwa; run_mark_duplicates; run_create_recalibration_table;
