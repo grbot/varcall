@@ -261,7 +261,6 @@ process runMultiQC{
 
 process check_dup_cov {
     tag { "${params.project_name}.${sample_id}.cDC" }
-    echo true
     publishDir "${params.out_dir}/cram-qc/${sample_id}", mode: 'copy', overwrite: false
     input:
     set val(sample_id), file(flagstat_file) from flagstat
@@ -296,7 +295,6 @@ process check_dup_cov {
 
 process check_freemix {
     tag { "${params.project_name}.${sample_id}.cFM" }
-    echo true
     publishDir "${params.out_dir}/cram-qc/${sample_id}", mode: 'copy', overwrite: false
     input:
     set val(sample_id), file(verifybamid2_file) from verifybamid2
