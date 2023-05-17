@@ -23,13 +23,14 @@ Channel.fromPath( file(params.sample_sheet) )
 
 ref_seq = Channel.fromPath(params.ref_seq).toList()
 ref_dict = Channel.fromPath(params.ref_dict).toList()
+high_cov_cutoff = (params.high_cov_cutoff)
+medium_cov_cutoff = (params.medium_cov_cutoff)
 dup_cutoff = (params.dup_cutoff)
 map_cutoff = (params.map_cutoff)
 freemix_cutoff = (params.freemix_cutoff)
 
 process log_tool_version_multiqc {
     tag { "${params.project_name}.ltVm" }
-    echo true
     publishDir "${params.out_dir}/cram-qc", mode: 'copy', overwrite: false
     label 'multiqc'
 
@@ -44,7 +45,6 @@ process log_tool_version_multiqc {
 
 process log_tool_version_samtools {
     tag { "${params.project_name}.ltVs" }
-    echo true
     publishDir "${params.out_dir}/cram-qc", mode: 'copy', overwrite: false
     label 'samtools'
 
@@ -59,7 +59,6 @@ process log_tool_version_samtools {
 
 process log_tool_version_gatk {
     tag { "${params.project_name}.ltVg" }
-    echo true
     publishDir "${params.out_dir}/cram-qc", mode: 'copy', overwrite: false
     label 'gatk'
 
@@ -74,7 +73,6 @@ process log_tool_version_gatk {
 
 process log_tool_version_mosdepth {
     tag { "${params.project_name}.ltVm" }
-    echo true
     publishDir "${params.out_dir}/cram-qc", mode: 'copy', overwrite: false
     label 'mosdepth'
 
@@ -89,7 +87,6 @@ process log_tool_version_mosdepth {
 
 process log_tool_version_verifybamid2 {
     tag { "${params.project_name}.ltVv" }
-    echo true
     publishDir "${params.out_dir}/cram-qc", mode: 'copy', overwrite: false
     label 'verifybamid2'
 
@@ -104,7 +101,6 @@ process log_tool_version_verifybamid2 {
 
 process run_flagstat {
     tag { "${params.project_name}.${sample_id}.rF" }
-    echo true
     publishDir "${params.out_dir}/cram-qc/${sample_id}", mode: 'copy', overwrite: false
     label 'samtools'
     input:
@@ -124,7 +120,6 @@ process run_flagstat {
 
 process run_stats {
     tag { "${params.project_name}.${sample_id}.rS" }
-    echo true
     publishDir "${params.out_dir}/cram-qc/${sample_id}", mode: 'copy', overwrite: false
     label 'samtools'
     input:
@@ -143,7 +138,6 @@ process run_stats {
 
 process run_mosdepth {
     tag { "${params.project_name}.${sample_id}.riM" }
-    echo true
     publishDir "${params.out_dir}/cram-qc/${sample_id}", mode: 'copy', overwrite: false
     label 'mosdepth'
     input:
@@ -152,6 +146,7 @@ process run_mosdepth {
 
     output:
        file("${sample_id}.mosdepth.*") into mosdepth_file
+       set val(sample_id), file("${sample_id}.mosdepth.summary.txt") into mosdepth
 
     script:
     """
@@ -165,7 +160,6 @@ process run_mosdepth {
 if (params.build == "b37") {
   process run_verifybamid2_b37 {
       tag { "${params.project_name}.${sample_id}.riV" }
-      echo true
       publishDir "${params.out_dir}/cram-qc/${sample_id}", mode: 'copy', overwrite: false
       label 'verifybamid2'
       input:
@@ -191,7 +185,6 @@ if (params.build == "b37") {
 if (params.build == "b38") {
   process run_verifybamid2_b38 {
       tag { "${params.project_name}.${sample_id}.riV" }
-      echo true
       publishDir "${params.out_dir}/cram-qc/${sample_id}", mode: 'copy', overwrite: false
       label 'verifybamid2'
       input:
@@ -218,7 +211,6 @@ if (params.build == "b38") {
 /*
 process run_gatk {
     tag { "${params.project_name}.${sample_id}.riV" }
-    echo true
     publishDir "${params.out_dir}/cram-qc/${sample_id}", mode: 'copy', overwrite: false
     label 'gatk'
     input:
@@ -318,11 +310,37 @@ process check_freemix {
     """
 }
 
-checks = dup_cov.mix(freemix)
+process check_depth {
+    tag { "${params.project_name}.${sample_id}.cD" }
+    publishDir "${params.out_dir}/cram-qc/${sample_id}", mode: 'copy', overwrite: false
+    input:
+      set val(sample_id), file(mosdepth_file) from mosdepth
+    
+    output:
+       file("${sample_id}.depth")into depth
+
+    script:
+    """
+    depth=`cat $mosdepth_file | tail -1 | cut -f 4`
+    depth=`printf "%.0f\n" \$depth`
+ 
+    if [ \$depth -ge $high_cov_cutoff ]
+    then
+      echo -e "${sample_id}\tDepth\tHigh coverage" > ${sample_id}.depth 
+    elif [ \$depth -ge $medium_cov_cutoff ] && [ \$depth -lt $high_cov_cutoff ]
+    then
+      echo -e "${sample_id}\tDepth\tMedium coverage" > ${sample_id}.depth
+    else
+      echo -e "${sample_id}\tDepth\tLow coverage" > ${sample_id}.depth
+    fi
+
+    """
+}
+
+checks = dup_cov.mix(freemix, depth)
 
 process combine_checks {
     tag { "${params.project_name}.cC" }
-    echo true
     publishDir "${params.out_dir}/cram-qc/", mode: 'copy', overwrite: false
     input:
       file('*') from checks.collect()
