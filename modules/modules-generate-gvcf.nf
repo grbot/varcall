@@ -1,8 +1,6 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl=2
 
-// include { nodeOption } from './modules-location-aware.nf'
-
 // PARAMETERS & INPUT
 ref                       = file(params.ref, type: 'file')
 known_indels_1            = file(params.known_indels_1, type: 'file')
@@ -66,8 +64,6 @@ process run_haplotype_caller_auto {
     label 'gatk'
     memory { 12.GB * task.attempt }
     cpus { 2 }
-    // clusterOptions { nodes }
-    // publishDir "${outdir}/generate-gvcf/${project_name}/${sample_id}", mode: 'copy', overwrite: true
 
     input:
     tuple val(sample_id), val(gender), path(bam)
@@ -105,8 +101,6 @@ process run_haplotype_caller_males {
     label 'gatk'
     memory { 12.GB * task.attempt }
     cpus { 2 }
-    // clusterOptions { nodes }
-    // publishDir "${outdir}/generate-gvcf/${project_name}/${sample_id}", mode: 'copy', overwrite: false
 
     input:
     tuple val(sample_id), val(gender), path(bam)
@@ -202,8 +196,6 @@ process run_haplotype_caller_females {
     label 'gatk'
     memory { 12.GB * task.attempt }
     cpus { 2 }
-    // clusterOptions { nodes }
-    // publishDir "${outdir}/generate-gvcf/${project_name}/${sample_id}", mode: 'copy', overwrite: false
 
     input:
     tuple val(sample_id), val(gender), path(bam)
@@ -241,8 +233,6 @@ process run_haplotype_caller_mt {
     label 'gatk'
     memory { 12.GB * task.attempt }
     cpus { 2 }
-    // clusterOptions { nodes }
-    // publishDir "${outdir}/generate-gvcf/${project_name}/${sample_id}", mode: 'copy', overwrite: false
 
     input:
     tuple val(sample_id), val(gender), path(bam)
@@ -279,13 +269,12 @@ process run_sort_male_gvcfs {
     tag { "${sample_id}.sMgVCF" }
     label 'gatk'
     memory { 8.GB * task.attempt }
-    // publishDir "${outdir}/generate-gvcf/${project_name}/${sample_id}", mode: 'copy', overwrite: false
 
     input:
     tuple val(sample_id), path(vcf), path(index) 
     
     output:
-        tuple val(sample_id), path("${sample_id}.X.g.vcf.gz"), path("${sample_id}.Y.g.vcf.gz"), path("${sample_id}.X.g.vcf.gz.tbi"), path("${sample_id}.Y.g.vcf.gz.tbi"), emit: male_calls_combined
+    tuple val(sample_id), path("${sample_id}.X.g.vcf.gz"), path("${sample_id}.Y.g.vcf.gz"), path("${sample_id}.X.g.vcf.gz.tbi"), path("${sample_id}.Y.g.vcf.gz.tbi"), emit: male_calls_combined
     
     script:
     mem = task.memory.toGiga() - 4
@@ -309,8 +298,7 @@ process run_combine_sample_gvcfs {
     tag { "${sample_id}.cCgVCF" }
     label 'gatk'
     memory { 8.GB * task.attempt }
-
-    publishDir "${outdir}/generate-gvcf/${project_name}/${sample_id}", mode: 'copy', overwrite: false
+    publishDir "${outdir}/${params.workflow}/${project_name}/${sample_id}", mode: 'copy', overwrite: false
     
     input:
     tuple val(sample_id), path(gvcfs), path(indexes)
@@ -367,7 +355,7 @@ process run_combine_sample_gvcfs {
 process run_create_gvcf_md5sum {
     tag { "${sample_id}.cGMD5" }
     memory { 4.GB * task.attempt }
-    publishDir "${outdir}/generate-gvcf/${project_name}/${sample_id}", mode: 'copy', overwrite: false
+    publishDir "${outdir}/${params.workflow}/${project_name}/${sample_id}", mode: 'copy', overwrite: false
 
     input:
     tuple val(sample_id), path(gvcf), path(index)

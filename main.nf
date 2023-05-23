@@ -1,60 +1,12 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl=2
 
-//========== PARAMETERS & INPUT ==========//
-// ALIGNMENT
-params.sample_sheet       = "/home/phelelani/nf-workflows/varcall/data/samplesheets/samplesheet_scd.tsv"
-params.outdir             = "/external/diskC/phelelani/varcall_out"
-params.project_name       = "scd"
-params.cohort_id          = "scd"
-params.sample_coverage    = "low"
-
-params.workflow           = null
-params.type               = "wgs"
-params.target_regions     = "/"
-
-//params.db_path            = "/external/diskC/phelelani/data/b38db"
-params.db_path            = "/local/phelelani/b38db"
-params.db_update          = "no"
-
-params.gvcf               = "/home/phelelani/nf-workflows/varcall/WF-GENERATE_GVCFS/combine-gvcfs/TEST_COHORT.g.vcf.gz"
-
-// // BUILD 37
-// params.build              = "b37"
-// params.ref                = "/external/diskC/phelelani/data/gatk/bundle/b37/human_g1k_v37_decoy.fasta" 
-// params.dbsnp              = "/external/diskC/phelelani/data/gatk/bundle/b37/dbsnp_138.b37.vcf"
-// params.known_indels_1     = "/external/diskC/phelelani/data/gatk/bundle/b37/1000G_phase1.indels.b37.vcf"
-// params.known_indels_2     = "/external/diskC/phelelani/data/gatk/bundle/b37/Mills_and_1000G_gold_standard.indels.b37.vcf"
-// params.hapmap             = "/external/diskC/phelelani/data/gatk/bundle/b37/hapmap_3.3.b37.vcf"
-// params.omni               = "/external/diskC/phelelani/data/gatk/bundle/b37/1000G_omni2.5.b37.vcf"
-// params.phase1_snps        = "/external/diskC/phelelani/data/gatk/bundle/b37/1000G_phase1.snps.high_confidence.b37.vcf"
-// params.golden_indels      = "/external/diskC/phelelani/data/gatk/bundle/b37/Mills_and_1000G_gold_standard.indels.b37.vcf"
-
-// BUILD 38
-params.build              = "b38"
-params.ref                = "/external/diskC/phelelani/data/gatk/bundle/b38/Homo_sapiens_assembly38.fasta" 
-params.dbsnp              = "/external/diskC/phelelani/data/gatk/bundle/b38/dbsnp_146.hg38.vcf.gz"
-params.known_indels_1     = "/external/diskC/phelelani/data/gatk/bundle/b38/Homo_sapiens_assembly38.known_indels.vcf.gz"
-params.known_indels_2     = "/external/diskC/phelelani/data/gatk/bundle/b38/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz"
-params.hapmap             = "/external/diskC/phelelani/data/gatk/bundle/b38/hapmap_3.3.hg38.vcf.gz"
-params.omni               = "/external/diskC/phelelani/data/gatk/bundle/b38/1000G_omni2.5.hg38.vcf.gz"
-params.phase1_snps        = "/external/diskC/phelelani/data/gatk/bundle/b38/1000G_phase1.snps.high_confidence.hg38.vcf.gz"
-params.golden_indels      = "/external/diskC/phelelani/data/gatk/bundle/b38/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz"
-
-params.memory_per_thread  = "500M"
-params.bwa_threads        = "32"
-
-params.ts_filter_level_snps  = 99.5    
-params.ts_filter_level_indels = 99.0    
-params.max_gaussians_snps = 4
-params.max_gaussians_indels = 8
-
 //----- COMMON  WORKFLOWS PARAMETER
 workflow                  = params.workflow
 db                        = file(params.db_path, type: 'dir')
 db_update                 = params.db_update
 
-// GENERATE GVCFS WORKFLOW
+// SET CHROMOSOMES ACCORDING TO GENOME BUILD (B37/B38)
 if (params.build == "b37") {
     if ( params.workflow == 'generate-gvcfs' ) {
         chroms_auto = (1..22).toList()
@@ -72,38 +24,52 @@ if (params.build == "b37") {
 } else {
 }
 
-//----- CHANNELS
-// GET SAMPLE INFO FROM SAMPLE SHEET - MINIMUM INFORMATION THAT ARE NEEDED IN THE SAMPLE SHEET ARE SAMPLEID, FORWARD AND REVERSE READ FILE LOCATION
-samples = Channel.fromPath(params.sample_sheet)
-    .splitCsv(header: true, sep: '\t')
-    .map { row -> [ "${row.SampleID}",
-                   "${row.Gender}",
-                   "${row.FastqR1}",
-                   "${row.FastqR2}",
-                   "${row.Flowcell}",
-                   "${row.Lane}",
-                   "${row.BAM}",
-                   "${row.gVCF}" ] }
+// SET SAMPLE SHEET INPUT FOR THE WORKFLOWS THAT REQUIRE THEM
+if (params.workflow == 'align' || params.workflow == 'generate-gvcfs' || params.workflow == 'combine-gvcfs' || params.workflow == 'genomic-db-import') {
+    // GET SAMPLE INFO FROM SAMPLE SHEET - MINIMUM INFORMATION THAT ARE NEEDED IN THE SAMPLE SHEET ARE SAMPLEID, FORWARD AND REVERSE READ FILE LOCATION
+    Channel.fromPath(params.sample_sheet)
+        .splitCsv(header: true, sep: '\t')
+        .map { row -> [ "${row.SampleID}",
+                       "${row.Gender}",
+                       "${row.FastqR1}",
+                       "${row.FastqR2}",
+                       "${row.Flowcell}",
+                       "${row.Lane}",
+                       "${row.BAM}",
+                       "${row.gVCF}" ] }
+        .set { samples }
+    if (params.workflow == 'align'){
+        // GET INPUT FOR ALIGN WORKFLOW: SAMPLE_ID, FORWARD_READ, REVERSE_READ, FLOWCELL, LANE
+        samples.map { [ it[0], it[2], it[3], it[4], it[5]] }
+            .set { samples_align }
+    } else if (params.workflow == 'generate-gvcfs') {
+        // GET INPUT FOR GENERATE-GVCFS WORKFLOW: SAMPLE_ID, GENDER, BAM
+        samples.map { [ it[0], it[1], it[6]] }
+            .set { samples_generate_gvcfs }
+        // GET INPUT (GENDER BASED) FOR GENERATE-GVCFS WORKFLOW: SAMPLE_ID, GENDER, BAM
+        samples_generate_gvcfs.filter { it[1] == 'M' }.set { samples_generate_gvcfs_males }
+        samples_generate_gvcfs.filter { it[1] == 'F' }.set { samples_generate_gvcfs_females }
+        samples_generate_gvcfs.filter { !(it[1] =~ 'F|M') }.set { samples_generate_gvcfs_nosex }
+    } else if (params.workflow == 'combine-gvcfs' || params.workflow == 'genomic-db-import') {
+        // GET INPUT FOR COMBINE-GVCFS/GENOMIC-DB-IMPORT WORKFLOW: SAMPLE_ID, GVCF
+        samples.map { [ it[0], it[7] ] }
+            .set { samples_gvcfs_list }
+    }
+} else if ( params.workflow == 'genome-calling') {
+    Channel.fromPath([params.gvcf, "${params.gvcf}.tbi"])
+        .toList()
+        .set { gvcf }
+} else {}
 
-// GET INPUT FOR ALIGN WORKFLOW: SAMPLE_ID, FORWARD_READ, REVERSE_READ, FLOWCELL, LANE
-samples.map { [ it[0], it[2], it[3], it[4], it[5]] }
-    .set { samples_align }
-
-// GET INPUT FOR GENERATE-GVCFS WORKFLOW: SAMPLE_ID, GENDER, BAM
-samples.map { [ it[0], it[1], it[6]] }
-    .set { samples_generate_gvcfs }
-
-// GET INPUT (GENDER BASED) FOR GENERATE-GVCFS WORKFLOW: SAMPLE_ID, GENDER, BAM
-samples_generate_gvcfs.filter { it[1] == 'M' }.set { samples_generate_gvcfs_males }
-samples_generate_gvcfs.filter { it[1] == 'F' }.set { samples_generate_gvcfs_females }
-samples_generate_gvcfs.filter { !(it[1] =~ 'F|M') }.set { samples_generate_gvcfs_nosex } 
-
-// GET INPUT FOR COMBINE-GVCFS WORKFLOW: SAMPLE_ID, GVCF
-samples.map { [ it[0], it[7] ] }
-    .set { samples_gvcfs_list }
-
-// GVCF FILE ---CHECK<<<<<<<
-gvcf = Channel.fromPath([params.gvcf, "${params.gvcf}.tbi"]).toList()
+// ARE WE USING INTERVALS INSTEAD OF CHROMOSOMES? --use_intervals
+if (params.use_intervals) {
+    Channel.fromPath(params.intervals, type: 'file')
+        .splitText()
+        .map { it -> it.trim() }
+        .filter { it -> it =~ 'chr22' }
+        .collect()
+        .set { chroms_all }
+}
 
 //----- INCLUDE MODULES
 // GENERAL
@@ -128,12 +94,13 @@ include { run_haplotype_caller_auto as run_haplotype_caller_auto_nosex;
          run_create_gvcf_md5sum as run_create_gvcf_md5sum_males;
          run_create_gvcf_md5sum as run_create_gvcf_md5sum_females } from './modules/modules-generate-gvcf.nf'
 // COMBINE GVCFS
-include { run_combine_gvcfs; run_concat_gvcfs} from './modules/modules-combine-gvcfs.nf'
+include { run_combine_gvcfs; run_concat_gvcfs } from './modules/modules-combine-gvcfs.nf'
 // GENOMICS DB IMPORT
 include { run_genomics_db_import_new; run_backup_genomic_db; run_genomics_db_import_update } from './modules/modules-genomics-db-import.nf'
 // GENOME CALLING
-include { run_genotype_gvcf_on_genome_gvcf; run_concat_vcf; run_vqsr_on_snps; run_apply_vqsr_on_snps;
-         run_vqsr_on_indels; run_apply_vqsr_on_indels } from './modules/modules-genome-calling.nf'
+include { run_genotype_gvcf_on_genome_gvcf } from './modules/modules-genome-calling.nf'
+// run_concat_vcf; run_vqsr_on_snps; run_apply_vqsr_on_snps;
+//          run_vqsr_on_indels; run_apply_vqsr_on_indels } 
 
 // ALIGN WORKFLOW - NOT TESTED THOROUGHLY (NEED ORIGINAL FASTQ FILES)
 workflow ALIGN {
@@ -141,8 +108,8 @@ workflow ALIGN {
     samples
 
     main:
-    // log_tool_version_samtools_bwa()
-    // log_tool_version_gatk()
+    log_tool_version_samtools_bwa()
+    log_tool_version_gatk()
     run_bwa(samples)
     run_mark_duplicates(run_bwa.out.raw_bam)
     run_create_recalibration_table(run_mark_duplicates.out.md_bam)
@@ -162,6 +129,7 @@ workflow GENERATE_GVCFS {
     chroms_par
     
     main:
+    log_tool_version_gatk()
     // GENERATE_GVCFS: NO SEX
     run_haplotype_caller_auto_nosex(samples_nosex, chroms_auto)
     run_haplotype_caller_mt_nosex(samples_nosex)
@@ -200,14 +168,14 @@ workflow GENERATE_GVCFS {
 workflow COMBINE_GVCFS {
     take:
     samples_gvcfs_list
-    chrom_all
+    chroms_all
     
     main:
-    // log_tool_version_gatk()
+    log_tool_version_gatk()
     samples_gvcfs_list
         .collectFile() { item -> [ 'gvcf.list', "${item.get(1)}" + '\n' ] }
         .set { gvcf_list }
-    run_combine_gvcfs( gvcf_list, chrom_all)
+    run_combine_gvcfs( gvcf_list, chroms_all)
     run_combine_gvcfs.out.cohort_chr_calls
         .flatten()
         .collect()
@@ -220,10 +188,23 @@ workflow COMBINE_GVCFS {
 workflow GENOMICS_DB_IMPORT {
     take:
     samples_gvcfs_list
-    chrom_all
+    chroms_all
 
     main:
     switch (db_update) {
+        case['no']:
+            if ( db.exists() ) {
+                println "DB exists:${db}. Please check if you want to create new or update existing DB. If so please delete or backup first."
+                exit 1
+            } else if ( !db.exists() ) {
+                println "Creating new DB:${db}"
+                samples_gvcfs_list
+                    .collectFile() { item -> [ 'gvcf.list', "${item.get(1)}" + '\n' ] }
+                    .set { gvcf_list }
+                run_genomics_db_import_new(gvcf_list, chroms_all)
+            }
+            break
+            // =====   
         case['yes']:
             if ( db.exists() ) {
                 println "DB:${db} exists. Making a backup copy before update."
@@ -238,40 +219,26 @@ workflow GENOMICS_DB_IMPORT {
             }
             break
             // =====
-        case['no']:
-            if ( db.exists() ) {
-                println "DB exists:${db}. Please check if you want to create new or update existing DB. If so please delete or backup first."
-                exit 1
-            } else if ( !db.exists() ) {
-                println "Creating new DB:${db}"
-                samples_gvcfs_list
-                    .collectFile() { item -> [ 'gvcf.list', "${item.get(1)}" + '\n' ] }
-                    .set { gvcf_list }
-                run_genomics_db_import_new(gvcf_list, chroms_all)
-            }
-            break
-            // =====   
     }
 }
 
 // GENOME CALLING
 workflow GENOME_CALLING {
     take:
-    gvcf
     chroms_all
     
     main:
-    run_genotype_gvcf_on_genome_gvcf(gvcf, chroms_all)
-    run_genotype_gvcf_on_genome_gvcf.out.gg_vcf_set
-        .flatten()
-        .collect()
-        .map { it -> [ it.findAll { it =~ '.vcf.gz$' }, it.findAll { it =~ '.vcf.gz.tbi$' } ] }
-        .set { concat_ready }
-    run_concat_vcf(concat_ready)
-    run_vqsr_on_snps(run_concat_vcf.out.combined_calls)
-    run_apply_vqsr_on_snps(run_vqsr_on_snps.out.snps_vqsr_recal)
-    run_vqsr_on_indels(run_concat_vcf.out.combined_calls)
-    run_apply_vqsr_on_indels(run_vqsr_on_indels.out.indel_vqsr_recal)
+    run_genotype_gvcf_on_genome_db(chroms_all)
+    // run_genotype_gvcf_on_genome_gvcf.out.gg_vcf_set
+    //     .flatten()
+    //     .collect()
+    //     .map { it -> [ it.findAll { it =~ '.vcf.gz$' }, it.findAll { it =~ '.vcf.gz.tbi$' } ] }
+    //     .set { concat_ready }
+    // run_concat_vcf(concat_ready)
+    // run_vqsr_on_snps(run_concat_vcf.out.combined_calls)
+    // run_apply_vqsr_on_snps(run_vqsr_on_snps.out.snps_vqsr_recal)
+    // run_vqsr_on_indels(run_concat_vcf.out.combined_calls)
+    // run_apply_vqsr_on_indels(run_vqsr_on_indels.out.indel_vqsr_recal)
 }
 
 // PICK & CHOOSE WORKFLOW
@@ -295,7 +262,7 @@ workflow {
             break
             // =====
         case['genome-calling']:
-            GENOME_CALLING(gvcf, chroms_all)
+            GENOME_CALLING(chroms_all)
             break
             // =====            
         case['filter-vcf ']:
