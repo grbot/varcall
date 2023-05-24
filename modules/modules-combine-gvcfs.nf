@@ -13,6 +13,7 @@ process run_combine_gvcfs {
     tag { "${project_name}.${chr}.rCG" }
     label 'gatk'
     memory { 64.GB * task.attempt }
+    time '120h'
     publishDir "${outdir}/${params.workflow}/${project_name}", mode: 'copy', overwrite: true
 
     input:
@@ -36,7 +37,8 @@ process run_combine_gvcfs {
 process run_concat_gvcfs {
     tag { "${project_name}.rCV" }
     label 'gatk'
-    memory { 16.GB * task.attempt }  
+    memory { 16.GB * task.attempt }
+    time '120h'
     publishDir "${outdir}/${params.workflow}/${project_name}", mode: 'copy', overwrite: true
 
     input:

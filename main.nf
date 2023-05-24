@@ -25,7 +25,7 @@ if (params.build == "b37") {
 }
 
 // SET SAMPLE SHEET INPUT FOR THE WORKFLOWS THAT REQUIRE THEM
-if (params.workflow == 'align' || params.workflow == 'generate-gvcfs' || params.workflow == 'combine-gvcfs' || params.workflow == 'genomic-db-import') {
+if (params.workflow == 'align' || params.workflow == 'generate-gvcfs' || params.workflow == 'combine-gvcfs' || params.workflow == 'genomics-db-import') {
     // GET SAMPLE INFO FROM SAMPLE SHEET - MINIMUM INFORMATION THAT ARE NEEDED IN THE SAMPLE SHEET ARE SAMPLEID, FORWARD AND REVERSE READ FILE LOCATION
     Channel.fromPath(params.sample_sheet)
         .splitCsv(header: true, sep: '\t')
@@ -50,7 +50,7 @@ if (params.workflow == 'align' || params.workflow == 'generate-gvcfs' || params.
         samples_generate_gvcfs.filter { it[1] == 'M' }.set { samples_generate_gvcfs_males }
         samples_generate_gvcfs.filter { it[1] == 'F' }.set { samples_generate_gvcfs_females }
         samples_generate_gvcfs.filter { !(it[1] =~ 'F|M') }.set { samples_generate_gvcfs_nosex }
-    } else if (params.workflow == 'combine-gvcfs' || params.workflow == 'genomic-db-import') {
+    } else if (params.workflow == 'combine-gvcfs' || params.workflow == 'genomics-db-import') {
         // GET INPUT FOR COMBINE-GVCFS/GENOMIC-DB-IMPORT WORKFLOW: SAMPLE_ID, GVCF
         samples.map { [ it[0], it[7] ] }
             .set { samples_gvcfs_list }
