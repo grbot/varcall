@@ -7,7 +7,7 @@ Channel.fromPath( file(params.sample_sheet) )
         .map{row ->
             def sample_id = row['SampleID']
             def gender = row['Gender']
-            def bam_file = file(row['BAM'])
+            def bam_file = file(row['BAM/CRAM'])
             return [ sample_id, gender, bam_file ]
         }.into{samples_1; samples_2; samples_3; samples_4; samples_5}
 
