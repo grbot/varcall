@@ -6,7 +6,7 @@ Channel.fromPath( file(params.sample_sheet) )
         .splitCsv(header: true, sep: '\t')
         .map{row ->
             def sample_id = row['SampleID']
-            def bam_dir = file(row['BAMdir'])
+            def bam_dir = file(row['BAMdir/CRAMdir'])
             return [ sample_id, bam_dir ]
         }.set{samples}
 
