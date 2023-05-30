@@ -36,10 +36,8 @@ Each output directory will contain
 4. `dbimport.backup` - Backup of the old db if the db was updated (copy)
 
 ## Reasons for different `main.*`
-- `main.nf` - GenomicsDBImport running in parallel on chromomes (update DB available)
-- `main.parallel.nf` - GenomicsDBImport running in parallel on chromosomes (no update on DB available)
-- `main.simple.nf` - GenomicsDBImport running on intervals (no parallelisation, no update on DB available)
-- `main.intervals.nf` - GenomicsDBImport running on intervals (with parallelisation, no update on DB available)
+- `main.nf` - GenomicsDBImport running in parallel on chromomes (Update DB available)
+- `main.intervals.nf` - GenomicsDBImport running in parallel on intervals (No update on DB available. Need to add update DB from example in `main.nf` if there is a need.)
 
 ## get-fragmanets.py
 For creating `intervals.list` for `main.intervals.nf`. Need to specify the sample size and a file with chromosome sizes. E.g. `cat /cbio/dbs/gatk/2.8/b37/human_g1k_v37_decoy.fasta.fai | cut -f 1,2 | grep -P "^1\t|^2\t|^3\t|^4\t|^5\t|^6\t|^7\t|^8\t|^9\t|^10\t|^11\t|^12\t|^13\t|^14\t|^15\t|^16\t|^17\t|^18\t|^19\t|^20\t|^21\t|^22\t|^X\t|^Y\t|^MT\t" > genome.sizes`
