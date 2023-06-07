@@ -23,6 +23,13 @@ params{
   dbsnp = "/cbio/dbs/gatk/hg38/dbsnp_146.hg38.vcf.gz"
   dbsnp_index = "/cbio/dbs/gatk/hg38/dbsnp_146.hg38.vcf.gz.tbi"
 
+  // sentieon
+  sentieon = true
+  sentieon_license = "10.102.37.76:8990"
+  sentieon_libjemalloc = "/usr/lib/x86_64-linux-gnu/libjemalloc.so.2"
+  sentieon_bam_option = "--bam_compression 1"
+  sentieon_threads = 32
+
   // samtools
   memory_per_thread = "500M"
 
@@ -37,6 +44,10 @@ executor{
 
 process {
     cache = true
+
+    withLabel: sentieon {
+         container = 'docker://quay.io/grbot/sentieon'
+    }
 
     withLabel: bwa_samtools {
          container = 'docker://quay.io/grbot/bwa-samtools'
