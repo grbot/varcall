@@ -19,5 +19,5 @@ nextflow run /home/gerrit/code/recalling/filter-vcf/main.nf  -c /home/gerrit/cod
 ## Output
 
 The output directory will contain
-1. A VCF file containing high quality short SNPs and INDELS - `*.filter-pass.vcf.gz`
-1. A VCF file containing MNPs - `*filter-other.vcf.gz`
+1. A VCF file containing high quality short SNPs, INDELS and MIXED - `*.filter-pass.vcf.gz`
+1. A VCF file containing sites flagged in the FILTER column with `.` - `*filter-other.vcf.gz`
