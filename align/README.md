@@ -4,6 +4,8 @@ The Nextflow script runs bwa-mem, Picard markduplicates, GATK BQSR, BAM to CRAM 
 
 Please see `nextflow.conf` for bwa, samtools and GATK and Docker/Singularity versions and references databases used.
 
+Sentieon is now included as an option for alignment. In config set `sentieon = true` to enable or `sentieon = false` to run normal BWA/GATK workflow. See `nextflow.config.NA12878.b38` for additional settings that are needed for a Sentieon run.
+
 ## Sample sheet format
 
 Below is the sample sheet format. The sample sheet should be a tab delimited text file and should be specified in `nextflow.config`.  For the alignment run, SampleID, FastqR1, FastqR2, Flowcell and Lane columns are required.

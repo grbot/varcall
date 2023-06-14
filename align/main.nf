@@ -31,6 +31,12 @@ known_indels_2_index = Channel.fromPath(params.known_indels_2_index).toList()
 dbsnp = Channel.fromPath(params.dbsnp).toList()
 dbsnp_index = Channel.fromPath(params.dbsnp_index).toList()
 
+sentieon = params.sentieon
+sentieon_license = params.sentieon_license
+sentieon_libjemalloc = params.sentieon_libjemalloc
+sentieon_bam_option = params.sentieon_bam_option
+sentieon_threads = params.sentieon_threads
+
 /*
 process print_sample_info {
     tag { "${sample_id}" }
@@ -77,197 +83,423 @@ process log_tool_version_gatk {
 }
 
 if (params.build == "b37") {
-  process run_bwa_build37 {
-      tag { "${params.project_name}.${sample_id}.rBwa" }
-      memory { 64.GB * task.attempt }
-      cpus { "${params.bwa_threads}" }
-      publishDir "${params.out_dir}/${sample_id}", mode: 'symlink', overwrite: false
-      label 'bwa_samtools'
-  
-      input:
-      set val(sample_id), file(fastq_r1_file), file(fastq_r2_file), val(flowcell), val(lane) from samples_2
-      file (ref) from ref_seq
-      file (ref_index) from ref_seq_index
-      file (ref_amb) from ref_seq_amb
-      file (ref_ann) from ref_seq_ann
-      file (ref_bwt) from ref_seq_bwt
-      file (ref_pac) from ref_seq_pac
-      file (ref_sa) from ref_seq_sa
-  
-      output:
-      set val("$sample_id"), file("${sample_id}.bam")  into raw_bam
-      
-      script:
-     
-      readgroup_info="@RG\\tID:$flowcell.$lane\\tLB:LIBA\\tSM:$sample_id\\tPL:Illumina"
-      
-      if(lane == "0") {
-          sample_id = "$sample_id"
-      } else {
-  	sample_id = "$sample_id-${flowcell}.${lane}"
-      }
-     
-      nr_threads = task.cpus - 1
-      
-      """
-      bwa mem \
-      -R \"${readgroup_info}\" \
-      -t ${nr_threads}  \
-      -K 100000000 \
-      -Y \
-      ${ref} \
-      ${fastq_r1_file} \
-      ${fastq_r2_file} | \
-      samtools sort \
-      -@ ${nr_threads} \
-      -m ${params.memory_per_thread} \
-      - > ${sample_id}.bam
-      """
-  }
+    if (sentieon) {
+        process run_bwa_b37_sentieon {
+            tag { "${params.project_name}.${sample_id}.rBwaS" }
+            memory { 64.GB * task.attempt }
+            cpus { "${sentieon_threads}" }
+            publishDir "${params.out_dir}/${sample_id}", mode: 'symlink', overwrite: false
+            label 'sentieon'
+
+            input:
+            set val(sample_id), file(fastq_r1_file), file(fastq_r2_file), val(flowcell), val(lane) from samples_2
+            file (ref) from ref_seq
+            file (ref_index) from ref_seq_index
+            file (ref_amb) from ref_seq_amb
+            file (ref_ann) from ref_seq_ann
+            file (ref_bwt) from ref_seq_bwt
+            file (ref_pac) from ref_seq_pac
+            file (ref_sa) from ref_seq_sa
+        
+            output:
+            set val("$sample_id"), file("${sample_id}.bam"), file("${sample_id}.bam.bai")  into raw_bam
+
+            script:
+            
+            readgroup_info="@RG\\tID:$flowcell.$lane\\tLB:LIBA\\tSM:$sample_id\\tPL:Illumina"
+            
+            if(lane == "0") {
+                sample_id = "$sample_id"
+            } else {
+            sample_id = "$sample_id-${flowcell}.${lane}"
+            }
+                        
+            """
+            export SENTIEON_LICENSE=${sentieon_license}
+            export LD_PRELOAD=${sentieon_libjemalloc}        
+            sentieon bwa mem \
+            -R \"${readgroup_info}\" \
+            -t ${sentieon_threads}  \
+            -K 100000000 \
+            -Y \
+            ${ref} \
+            ${fastq_r1_file} \
+            ${fastq_r2_file} | \
+            sentieon util sort \
+            ${sentieon_bam_option} \
+            -t ${sentieon_threads} \
+            -r ${ref} \
+            -o  ${sample_id}.bam \
+            --sam2bam \
+            -i -
+            """ 
+        }
+    }
+    else {  
+        process run_bwa_build37 {
+            tag { "${params.project_name}.${sample_id}.rBwa" }
+            memory { 64.GB * task.attempt }
+            cpus { "${params.bwa_threads}" }
+            publishDir "${params.out_dir}/${sample_id}", mode: 'symlink', overwrite: false
+            label 'bwa_samtools'
+        
+            input:
+            set val(sample_id), file(fastq_r1_file), file(fastq_r2_file), val(flowcell), val(lane) from samples_2
+            file (ref) from ref_seq
+            file (ref_index) from ref_seq_index
+            file (ref_amb) from ref_seq_amb
+            file (ref_ann) from ref_seq_ann
+            file (ref_bwt) from ref_seq_bwt
+            file (ref_pac) from ref_seq_pac
+            file (ref_sa) from ref_seq_sa
+        
+            output:
+            set val("$sample_id"), file("${sample_id}.bam")  into raw_bam
+            
+            script:
+            
+            readgroup_info="@RG\\tID:$flowcell.$lane\\tLB:LIBA\\tSM:$sample_id\\tPL:Illumina"
+            
+            if(lane == "0") {
+                sample_id = "$sample_id"
+            } else {
+            sample_id = "$sample_id-${flowcell}.${lane}"
+            }
+            
+            nr_threads = task.cpus - 1
+            
+            """
+            bwa mem \
+            -R \"${readgroup_info}\" \
+            -t ${nr_threads}  \
+            -K 100000000 \
+            -Y \
+            ${ref} \
+            ${fastq_r1_file} \
+            ${fastq_r2_file} | \
+            samtools sort \
+            -@ ${nr_threads} \
+            -m ${params.memory_per_thread} \
+            - > ${sample_id}.bam
+            """
+        }
+    }
 }
 
 if (params.build == "b38") {
-  process run_bwa_build38 {
-      tag { "${params.project_name}.${sample_id}.rBwa" }
-      memory { 64.GB * task.attempt }
-      cpus { "${params.bwa_threads}" }
-      publishDir "${params.out_dir}/${sample_id}", mode: 'symlink', overwrite: false
-      label 'bwa_samtools'
-  
-      input:
-      set val(sample_id), file(fastq_r1_file), file(fastq_r2_file), val(flowcell), val(lane) from samples_2
-      file (ref) from ref_seq
-      file (ref_index) from ref_seq_index
-      file (ref_amb) from ref_seq_amb
-      file (ref_ann) from ref_seq_ann
-      file (ref_bwt) from ref_seq_bwt
-      file (ref_pac) from ref_seq_pac
-      file (ref_sa) from ref_seq_sa
-      file (ref_alt) from ref_seq_alt
-  
-      output:
-      set val("$sample_id"), file("${sample_id}.bam")  into raw_bam
-      
-      script:
-     
-      readgroup_info="@RG\\tID:$flowcell.$lane\\tLB:LIBA\\tSM:$sample_id\\tPL:Illumina"
-      
-      if(lane == "0") {
-          sample_id = "$sample_id"
-      } else {
-  	sample_id = "$sample_id-${flowcell}.${lane}"
-      }
-     
-      nr_threads = task.cpus - 1
-      
-      """
-      bwa mem \
-      -R \"${readgroup_info}\" \
-      -t ${nr_threads}  \
-      -K 100000000 \
-      -Y \
-      ${ref} \
-      ${fastq_r1_file} \
-      ${fastq_r2_file} | \
-      samtools sort \
-      -@ ${nr_threads} \
-      -m ${params.memory_per_thread} \
-      - > ${sample_id}.bam
-      """
-  }
-}
-process run_mark_duplicates {
-    tag { "${params.project_name}.${sample_id}.rMD" }
-    memory { 16.GB * task.attempt }
-    publishDir "${params.out_dir}/${sample_id}", mode: 'symlink', overwrite: false
-    label 'gatk'
+    if (sentieon) {
+        process run_bwa_build38_sentieon {
+            tag { "${params.project_name}.${sample_id}.rBwaS" }
+            memory { 64.GB * task.attempt }
+            cpus { "${sentieon_threads}" }
+            publishDir "${params.out_dir}/${sample_id}", mode: 'symlink', overwrite: false
+            label 'sentieon'
+        
+            input:
+            set val(sample_id), file(fastq_r1_file), file(fastq_r2_file), val(flowcell), val(lane) from samples_2
+            file (ref) from ref_seq
+            file (ref_index) from ref_seq_index
+            file (ref_amb) from ref_seq_amb
+            file (ref_ann) from ref_seq_ann
+            file (ref_bwt) from ref_seq_bwt
+            file (ref_pac) from ref_seq_pac
+            file (ref_sa) from ref_seq_sa
+            file (ref_alt) from ref_seq_alt
+        
+            output:
+            set val("$sample_id"), file("${sample_id}.bam"), file("${sample_id}.bam.bai")  into raw_bam 
+            
+            script:
+            
+            readgroup_info="@RG\\tID:$flowcell.$lane\\tLB:LIBA\\tSM:$sample_id\\tPL:Illumina"
+            
+            if(lane == "0") {
+                sample_id = "$sample_id"
+            } else {
+            sample_id = "$sample_id-${flowcell}.${lane}"
+            }           
 
-    input:
-    set val(sample_id), file(bam_file) from raw_bam
-
-    output:
-    set val(sample_id), file("${sample_id}.md.bam"), file("${sample_id}.md.bai")  into md_bam
-
-    script:
-      mem = task.memory.toGiga() - 4
-    """
-    gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms4g -Xmx${mem}g"  \
-    MarkDuplicates \
-    --MAX_RECORDS_IN_RAM 5000 \
-    --INPUT ${bam_file} \
-    --METRICS_FILE ${bam_file}.metrics \
-    --TMP_DIR . \
-    --ASSUME_SORT_ORDER coordinate \
-    --CREATE_INDEX true \
-    --OUTPUT ${sample_id}.md.bam
-    """
-}
-
-process run_create_recalibration_table {
-    tag { "${params.project_name}.${sample_id}.rCRT" }
-    memory { 16.GB * task.attempt }
-    publishDir "${params.out_dir}/${sample_id}", mode: 'symlink', overwrite: false
-    label 'gatk'
-
-    input:
-    set val(sample_id), file(bam_file), file(bam_file_index) from md_bam
-    file (ref) from ref_seq
-    file (ref_index) from ref_seq_index
-    file (ref_dict) from ref_seq_dict
-    file (dbsnp_file) from dbsnp
-    file (dbsnp_index_file) from dbsnp_index
-    file (known_indels_1_file) from known_indels_1
-    file (known_indels_1_index_file) from known_indels_1_index
-    file (known_indels_2_file) from known_indels_2
-    file (known_indels_2_index_file) from known_indels_2_index
-
-    output:
-    set val(sample_id), file("${sample_id}.md.bam"), file("${sample_id}.md.bai"), file("${sample_id}.recal.table")  into recal_table
-
-    script:
-      mem = task.memory.toGiga() - 4
-    """
-    gatk --java-options  "-XX:+UseSerialGC -Xms4g -Xmx${mem}g" \
-    BaseRecalibrator \
-    --input ${bam_file} \
-    --output ${sample_id}.recal.table \
-    --tmp-dir . \
-    -R ${ref} \
-    --known-sites ${dbsnp_file} \
-    --known-sites ${known_indels_1_file} \
-    --known-sites ${known_indels_2_file}
-    """
+            """
+            export SENTIEON_LICENSE=${sentieon_license}
+            export LD_PRELOAD=${sentieon_libjemalloc}
+            sentieon bwa mem \
+                -R \"${readgroup_info}\" \
+                -t ${sentieon_threads}  \
+                -K 100000000 \
+                -Y \
+                ${ref} \
+                ${fastq_r1_file} \
+                ${fastq_r2_file} | \
+                sentieon util sort \
+                ${sentieon_bam_option} \
+                -t ${sentieon_threads} \
+                -r ${ref} \
+                -o  ${sample_id}.bam \
+                --sam2bam \
+                -i -
+            """             
+        }
+    }
+    else {
+        process run_bwa_build38 {
+            tag { "${params.project_name}.${sample_id}.rBwa" }
+            memory { 64.GB * task.attempt }
+            cpus { "${params.bwa_threads}" }
+            publishDir "${params.out_dir}/${sample_id}", mode: 'symlink', overwrite: false
+            label 'bwa_samtools'
+        
+            input:
+            set val(sample_id), file(fastq_r1_file), file(fastq_r2_file), val(flowcell), val(lane) from samples_2
+            file (ref) from ref_seq
+            file (ref_index) from ref_seq_index
+            file (ref_amb) from ref_seq_amb
+            file (ref_ann) from ref_seq_ann
+            file (ref_bwt) from ref_seq_bwt
+            file (ref_pac) from ref_seq_pac
+            file (ref_sa) from ref_seq_sa
+            file (ref_alt) from ref_seq_alt
+        
+            output:
+            set val("$sample_id"), file("${sample_id}.bam")  into raw_bam
+            
+            script:
+            
+            readgroup_info="@RG\\tID:$flowcell.$lane\\tLB:LIBA\\tSM:$sample_id\\tPL:Illumina"
+            
+            if(lane == "0") {
+                sample_id = "$sample_id"
+            } else {
+            sample_id = "$sample_id-${flowcell}.${lane}"
+            }
+            
+            nr_threads = task.cpus - 1
+            
+            """
+            bwa mem \
+            -R \"${readgroup_info}\" \
+            -t ${nr_threads}  \
+            -K 100000000 \
+            -Y \
+            ${ref} \
+            ${fastq_r1_file} \
+            ${fastq_r2_file} | \
+            samtools sort \
+            -@ ${nr_threads} \
+            -m ${params.memory_per_thread} \
+            - > ${sample_id}.bam
+            """
+        }             
+    }
 }
 
-process run_recalibrate_bam {
-    tag { "${params.project_name}.${sample_id}.rRB" }
-    memory { 16.GB * task.attempt }
-    cpus { 2 }
-    publishDir "${params.out_dir}/${sample_id}", mode: 'symlink', overwrite: false
-    label 'gatk'
+if (sentieon) {
+    process run_mark_duplicates_sentieon {
+        tag { "${params.project_name}.${sample_id}.rMDS" }
+        memory { 16.GB * task.attempt }
+        cpus { "${sentieon_threads}" }
+        publishDir "${params.out_dir}/${sample_id}", mode: 'symlink', overwrite: false
+        label 'sentieon'
 
-    input:
-    set val(sample_id), file(bam_file), file(bam_file_index), file(recal_table_file) from recal_table
-    file (ref) from ref_seq
-    file (ref_index) from ref_seq_index
-    file (ref_dict) from ref_seq_dict
+        input:
+        set val(sample_id), file(bam_file), file(bam_file_index) from raw_bam
 
-    output:
-    set val(sample_id), file("${sample_id}.md.recal.bam")  into recal_bam
-    set val(sample_id), file("${sample_id}.md.recal.bai")  into recal_bam_index
+        output:
+        set val(sample_id), file("${sample_id}.md.bam"), file("${sample_id}.md.bam.bai")  into md_bam
 
-    script:
-      mem = task.memory.toGiga() - 4
-    """
-    gatk --java-options  "-XX:+UseSerialGC -Xms4g -Xmx${mem}g" \
-     ApplyBQSR \
-    --input ${bam_file} \
-    --output ${sample_id}.md.recal.bam \
-    --tmp-dir . \
-    -R ${ref} \
-    --create-output-bam-index true \
-    --bqsr-recal-file ${recal_table_file}
-    """
+        script:
+        mem = task.memory.toGiga() - 4
+        """
+        export SENTIEON_LICENSE=${sentieon_license}
+        export LD_PRELOAD=${sentieon_libjemalloc}        
+        sentieon driver \
+        -t ${sentieon_threads} \
+        -i ${bam_file} \
+        --algo LocusCollector \
+        --fun score_info score.txt
+        sentieon driver \
+        -t ${sentieon_threads} \
+        -i ${bam_file} \
+        --algo Dedup \
+        --rmdup \
+        --score_info score.txt \
+        --metrics dedup_metrics.txt \
+        ${sentieon_bam_option} \
+        ${sample_id}.md.bam
+        """
+    }
+}
+else {    
+    process run_mark_duplicates {
+        tag { "${params.project_name}.${sample_id}.rMD" }
+        memory { 16.GB * task.attempt }
+        publishDir "${params.out_dir}/${sample_id}", mode: 'symlink', overwrite: false
+        label 'gatk'
+
+        input:
+        set val(sample_id), file(bam_file) from raw_bam
+
+        output:
+        set val(sample_id), file("${sample_id}.md.bam"), file("${sample_id}.md.bai")  into md_bam
+
+        script:
+        mem = task.memory.toGiga() - 4
+        """
+        gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms4g -Xmx${mem}g"  \
+        MarkDuplicates \
+        --MAX_RECORDS_IN_RAM 5000 \
+        --INPUT ${bam_file} \
+        --METRICS_FILE ${bam_file}.metrics \
+        --TMP_DIR . \
+        --ASSUME_SORT_ORDER coordinate \
+        --CREATE_INDEX true \
+        --OUTPUT ${sample_id}.md.bam
+        """
+    }
+}
+
+if (sentieon){
+    process run_create_recalibration_table_sentieon {
+        tag { "${params.project_name}.${sample_id}.rCRTS" }
+        memory { 16.GB * task.attempt }
+        cpus { "${sentieon_threads}" }
+        publishDir "${params.out_dir}/${sample_id}", mode: 'symlink', overwrite: false
+        label 'sentieon'
+
+        input:
+        set val(sample_id), file(bam_file), file(bam_file_index) from md_bam
+        file (ref) from ref_seq
+        file (ref_index) from ref_seq_index
+        file (ref_dict) from ref_seq_dict
+        file (dbsnp_file) from dbsnp
+        file (dbsnp_index_file) from dbsnp_index
+        file (known_indels_1_file) from known_indels_1
+        file (known_indels_1_index_file) from known_indels_1_index
+        file (known_indels_2_file) from known_indels_2
+        file (known_indels_2_index_file) from known_indels_2_index
+
+        output:
+        set val(sample_id), file("${sample_id}.md.bam"), file("${sample_id}.md.bam.bai"), file("${sample_id}.recal.table")  into recal_table
+
+        script:
+        mem = task.memory.toGiga() - 4
+        """
+        export SENTIEON_LICENSE=${sentieon_license}
+        export LD_PRELOAD=${sentieon_libjemalloc}        
+        sentieon driver \
+        -r ${ref} \
+        -t ${sentieon_threads} \
+        -i ${bam_file} \
+        --algo QualCal \
+        -k ${dbsnp_file} \
+        -k ${known_indels_1_file} \
+        -k ${known_indels_2_file} \
+        ${sample_id}.recal.table
+        """
+    }    
+}
+else {
+    process run_create_recalibration_table {
+        tag { "${params.project_name}.${sample_id}.rCRT" }
+        memory { 16.GB * task.attempt }
+        publishDir "${params.out_dir}/${sample_id}", mode: 'symlink', overwrite: false
+        label 'gatk'
+
+        input:
+        set val(sample_id), file(bam_file), file(bam_file_index) from md_bam
+        file (ref) from ref_seq
+        file (ref_index) from ref_seq_index
+        file (ref_dict) from ref_seq_dict
+        file (dbsnp_file) from dbsnp
+        file (dbsnp_index_file) from dbsnp_index
+        file (known_indels_1_file) from known_indels_1
+        file (known_indels_1_index_file) from known_indels_1_index
+        file (known_indels_2_file) from known_indels_2
+        file (known_indels_2_index_file) from known_indels_2_index
+
+        output:
+        set val(sample_id), file("${sample_id}.md.bam"), file("${sample_id}.md.bai"), file("${sample_id}.recal.table")  into recal_table
+
+        script:
+        mem = task.memory.toGiga() - 4
+        """
+        gatk --java-options  "-XX:+UseSerialGC -Xms4g -Xmx${mem}g" \
+        BaseRecalibrator \
+        --input ${bam_file} \
+        --output ${sample_id}.recal.table \
+        --tmp-dir . \
+        -R ${ref} \
+        --known-sites ${dbsnp_file} \
+        --known-sites ${known_indels_1_file} \
+        --known-sites ${known_indels_2_file}
+        """
+    }
+}
+
+if (sentieon) {
+    process run_recalibrate_bam_sentieon {
+        tag { "${params.project_name}.${sample_id}.rRBS" }
+        memory { 16.GB * task.attempt }
+        cpus { "${sentieon_threads}" }
+        publishDir "${params.out_dir}/${sample_id}", mode: 'symlink', overwrite: false
+        label 'sentieon'
+
+        input:
+        set val(sample_id), file(bam_file), file(bam_file_index), file(recal_table_file) from recal_table
+        file (ref) from ref_seq
+        file (ref_index) from ref_seq_index
+        file (ref_dict) from ref_seq_dict
+
+        output:
+        set val(sample_id), file("${sample_id}.md.recal.bam")  into recal_bam
+        set val(sample_id), file("${sample_id}.md.recal.bai")  into recal_bam_index
+
+        script:
+        mem = task.memory.toGiga() - 4
+        """
+        export SENTIEON_LICENSE=${sentieon_license}
+        export LD_PRELOAD=${sentieon_libjemalloc}        
+        sentieon driver \
+        -r ${ref} \
+        -t ${sentieon_threads} \
+        -i ${bam_file} \
+        -q ${recal_table_file} \
+        --algo ReadWriter \
+        ${sample_id}.md.recal.bam
+        mv ${sample_id}.md.recal.bam.bai ${sample_id}.md.recal.bai
+        """
+    }
+}
+else {
+    process run_recalibrate_bam {
+        tag { "${params.project_name}.${sample_id}.rRB" }
+        memory { 16.GB * task.attempt }
+        cpus { 2 }
+        publishDir "${params.out_dir}/${sample_id}", mode: 'symlink', overwrite: false
+        label 'gatk'
+
+        input:
+        set val(sample_id), file(bam_file), file(bam_file_index), file(recal_table_file) from recal_table
+        file (ref) from ref_seq
+        file (ref_index) from ref_seq_index
+        file (ref_dict) from ref_seq_dict
+
+        output:
+        set val(sample_id), file("${sample_id}.md.recal.bam")  into recal_bam
+        set val(sample_id), file("${sample_id}.md.recal.bai")  into recal_bam_index
+
+        script:
+        mem = task.memory.toGiga() - 4
+        """
+        gatk --java-options  "-XX:+UseSerialGC -Xms4g -Xmx${mem}g" \
+        ApplyBQSR \
+        --input ${bam_file} \
+        --output ${sample_id}.md.recal.bam \
+        --tmp-dir . \
+        -R ${ref} \
+        --create-output-bam-index true \
+        --bqsr-recal-file ${recal_table_file}
+        """
+    }
 }
 
 process bam_to_cram {
