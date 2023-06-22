@@ -73,7 +73,7 @@ process run_genotype_gvcf_on_genome_db {
     memory { 48.GB * task.attempt }  
     publishDir "${params.out_dir}/${params.cohort_id}/genome-calling", mode: 'copy', overwrite: false
     label 'gatk'
-    time = 24.h
+    time = 48.h
  
     input:
     file ref_seq
