@@ -33,7 +33,7 @@ Channel.fromFilePairs(in_files)
 process log_tool_version_bcftools {
     tag { "${params.project_name}.ltViB" }
     echo true
-    publishDir "${params.out_dir}/${params.cohort_id}/filter-samples-vcf", mode: 'move', overwrite: false
+    publishDir "${params.out_dir}/${params.cohort_id}/filter-samples-vcf", mode: 'copy', overwrite: false
     label 'bcftools'
 
     output:
@@ -48,7 +48,7 @@ process log_tool_version_bcftools {
 
 process filter_samples {
     tag { "${params.project_name}.${params.cohort_id}.${chr}.fS" }
-    publishDir "${out_dir}/${params.cohort_id}/filter-samples-vcf", mode: 'move', overwrite: false
+    publishDir "${out_dir}/${params.cohort_id}/filter-samples-vcf", mode: 'copy', overwrite: false
     label 'bcftools'
     time = 336.h 
    
