@@ -41,3 +41,9 @@ Each output directory will contain
 
 ## get-fragmanets.py
 For creating `intervals.list` for `main.intervals.nf`. Need to specify the sample size and a file with chromosome sizes. E.g. `cat /cbio/dbs/gatk/2.8/b37/human_g1k_v37_decoy.fasta.fai | cut -f 1,2 | grep -P "^1\t|^2\t|^3\t|^4\t|^5\t|^6\t|^7\t|^8\t|^9\t|^10\t|^11\t|^12\t|^13\t|^14\t|^15\t|^16\t|^17\t|^18\t|^19\t|^20\t|^21\t|^22\t|^X\t|^Y\t|^MT\t" > genome.sizes`
+
+For `b38`:
+
+```
+cat /cbio/dbs/gatk/hg38/Homo_sapiens_assembly38.fasta.fai  | cut -f 1,2 | grep -P "^chr1\t|^chr2\t|^chr3\t|^chr4\t|^chr5\t|^chr6\t|^chr7\t|^chr8\t|^chr9\t|^chr10\t|^chr11\t|^chr12\t|^chr13\t|^chr14\t|^chr15\t|^chr16\t|^chr17\t|^chr18\t|^chr19\t|^chr20\t|^chr21\t|^chr22\t|^chrX\t|^chrY\t|^chrM\t" > genome.sizes
+```
