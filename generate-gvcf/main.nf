@@ -54,7 +54,7 @@ dbsnp_index = Channel.fromPath(params.dbsnp_index).toList()
 
 if (params.type == "wes")
 { 
-      type == "wes"
+      type = "wes"
       target_regions = file(params.target_regions)
    
 }
