@@ -293,7 +293,7 @@ process run_haplotype_caller_on_x_par2_male {
          -I $bam_file \
          --emit-ref-confidence GVCF \
          --dbsnp ${dbsnp} \
-         --L ${target_regions} --L ${x}:${x_par2} --interval-set-rule INTERSECTION" \
+         --L ${target_regions} --L ${x}:${x_par2} --interval-set-rule INTERSECTION \
          --genotyping-mode DISCOVERY \
          -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
          -stand-call-conf ${call_conf} \
