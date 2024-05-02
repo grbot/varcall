@@ -28,7 +28,7 @@ process run_combine_gvcfs {
     """
     gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms500m -Xmx${mem}g" CombineGVCFs \
         -R ${ref} \
-        --L ${chr} \
+        --intervals ${chr} \
         --variant ${gvcf_list} \
         -O ${cohort_id}.${chr}.g.vcf.gz
     """

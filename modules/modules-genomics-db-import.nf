@@ -1,4 +1,5 @@
 #!/usr/bin/env nextflow
+nextflow.enable.dsl=2
 
 ref                       = file(params.ref, type: 'file')
 db                        = file(params.db_path, type: 'dir')
@@ -10,9 +11,10 @@ outdir.mkdir()
 process run_genomics_db_import_new {
     tag { "${project_name}.${chr}.rGDIN" }
     label 'gatk'
-    memory { 16.GB * task.attempt }
-    time '120h'
-    maxForks 50
+    memory { 250.GB * task.attempt }
+    time '240h'
+    cpus 2
+    errorStrategy 'finish'
     publishDir "${db}", mode: 'copy', overwrite: true
     
     input:
@@ -23,17 +25,24 @@ process run_genomics_db_import_new {
     path("${chr.replaceAll(":","_")}.gdb"), emit: interval_db
     
     script:
-    mem = task.memory.toGiga() - 2
-
+    mem = task.memory.toGiga() - ( task.memory.toGiga() * 1/5 )
+    rthreads = task.cpus - 1
+    
     """
-    gatk --java-options "-XX:+UseSerialGC -Xms4g -Xmx${mem}g" GenomicsDBImport \
-        --L ${chr} \
-        --variant ${gvcf_list} \
+    gatk --java-options "-XX:+UseSerialGC -Xms4g -Xmx${mem}g" \
+        GenomicsDBImport \
+        --reference ${ref} \
+        --intervals ${chr} \
+        --sample-name-map ${gvcf_list} \
         --batch-size 50 \
-        --reader-threads 5 \
+        --bypass-feature-reader \
+        --consolidate \
+        --genomicsdb-shared-posixfs-optimizations \
         --genomicsdb-workspace-path ${chr.replaceAll(":","_")}.gdb
     """
 }
+
+// --reader-threads ${rthreads} \
 
 // I'VE COMMENTED THE ACTUAL DB BACKUP COMMAND - DB T00 LARGE
 process run_backup_genomic_db {
@@ -52,7 +61,7 @@ process run_genomics_db_import_update {
     tag { "${params.project_name}.${chr}.rGDIU" }
     label 'gatk'
     memory { 16.GB * task.attempt }
-    time '120h'
+    time '168h'
     publishDir "${db}", mode: 'copy', overwrite: true
   
     input:

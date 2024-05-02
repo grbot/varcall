@@ -63,7 +63,7 @@ process run_haplotype_caller_auto {
     tag { "${sample_id}.${autosome}.rHCoA" }
     label 'gatk'
     memory { 12.GB * task.attempt }
-    cpus { 2 }
+    cpus { 4 }
 
     input:
     tuple val(sample_id), val(gender), path(bam)
@@ -76,18 +76,17 @@ process run_haplotype_caller_auto {
     mem = task.memory.toGiga() - 4
     if (type == "wes") {
     } else {
-        region = "--L ${autosome}"
+        intervals = "--intervals ${autosome}"
     }
     
     """
     gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g" \
         HaplotypeCaller \
-        -R ${ref} \
-        -I ${bam} \
+        --reference ${ref} \
+        --input ${bam} \
         --emit-ref-confidence GVCF \
         --dbsnp ${dbsnp} \
-        ${region} \
-        --genotyping-mode DISCOVERY \
+        ${intervals} \
         -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
         -stand-call-conf ${call_conf} \
         --sample-ploidy 2 \
@@ -100,7 +99,7 @@ process run_haplotype_caller_males {
     tag { "${sample_id}:${nonautosome}.rHCoNAmales" }
     label 'gatk'
     memory { 12.GB * task.attempt }
-    cpus { 2 }
+    cpus { 4 }
 
     input:
     tuple val(sample_id), val(gender), path(bam)
@@ -118,7 +117,7 @@ process run_haplotype_caller_males {
             if (type == "wes") {
                 target_regions = file(target_regions)
             } else {
-                region = "--L  ${x}:${x_par1}"
+                intervals = "--intervals  ${x}:${x_par1}"
             }
             break
             // =====
@@ -128,7 +127,7 @@ process run_haplotype_caller_males {
             if (type == "wes") {
                 target_regions = file(target_regions)
             } else {
-                region = "--L ${x}:${x_par2}"
+                intervals = "--intervals ${x}:${x_par2}"
             }
             break
             // =====
@@ -138,7 +137,7 @@ process run_haplotype_caller_males {
             if (type == "wes") {
                 target_regions = file(target_regions)
             } else {
-                region = "--L ${x} -XL ${x}:${x_par1} -XL ${x}:${x_par2}"
+                intervals = "--intervals ${x} --exclude-intervals ${x}:${x_par1} --exclude-intervals ${x}:${x_par2}"
             }
             break
             // =====
@@ -148,7 +147,7 @@ process run_haplotype_caller_males {
             if (type == "wes") {
                 target_regions = file(target_regions)
             } else {
-                region = "--L ${y}:${y_par1}"
+                intervals = "--intervals ${y}:${y_par1}"
             }
             break
             // =====
@@ -158,7 +157,7 @@ process run_haplotype_caller_males {
             if (type == "wes") {
                 target_regions = file(target_regions)
             } else {
-                region = "--L ${y}:${y_par2}"
+                intervals = "--intervals ${y}:${y_par2}"
             }                    
             break
             // =====
@@ -168,7 +167,7 @@ process run_haplotype_caller_males {
             if (type == "wes") {
                 target_regions = file(target_regions)
             } else {
-                region = "--L ${y} -XL ${y}:${y_par1} -XL ${y}:${y_par2}"
+                intervals = "--intervals ${y} --exclude-intervals ${y}:${y_par1} --exclude-intervals ${y}:${y_par2}"
             }
             break
             // =====
@@ -177,12 +176,11 @@ process run_haplotype_caller_males {
     """
     gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g" \
         HaplotypeCaller \
-        -R ${ref} \
-        -I ${bam} \
+        --reference ${ref} \
+        --input ${bam} \
         --emit-ref-confidence GVCF \
         --dbsnp ${dbsnp} \
-        ${region} \
-        --genotyping-mode DISCOVERY \
+        ${intervals} \
         -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
         -stand-call-conf ${call_conf} \
         --sample-ploidy ${ploidy} \
@@ -195,7 +193,7 @@ process run_haplotype_caller_females {
     tag { "${sample_id}:${x}.rHCoNAfemales" }
     label 'gatk'
     memory { 12.GB * task.attempt }
-    cpus { 2 }
+    cpus { 4 }
 
     input:
     tuple val(sample_id), val(gender), path(bam)
@@ -208,18 +206,17 @@ process run_haplotype_caller_females {
     if (type == "wes") {
         target_regions = file(target_regions)
     } else {
-        region = "--L ${x}"
+        intervals = "--intervals ${x}"
     }
     
     """
     gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g" \
         HaplotypeCaller \
-        -R ${ref} \
-        -I ${bam} \
+        --reference ${ref} \
+        --input ${bam} \
         --emit-ref-confidence GVCF \
         --dbsnp ${dbsnp} \
-        ${region} \
-        --genotyping-mode DISCOVERY \
+        ${intervals} \
         -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
         -stand-call-conf ${call_conf} \
         --sample-ploidy 2 \
@@ -232,7 +229,7 @@ process run_haplotype_caller_mt {
     tag { "${sample_id}:${mt}.rHCoNAmt" }
     label 'gatk'
     memory { 12.GB * task.attempt }
-    cpus { 2 }
+    cpus { 4 }
 
     input:
     tuple val(sample_id), val(gender), path(bam)
@@ -245,25 +242,23 @@ process run_haplotype_caller_mt {
     if (type == "wes") {
         target_regions = file(target_regions)
     } else {
-        region = "--L ${mt}"
+        intervals = "--intervals ${mt}"
     }
     
     """
     gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms2g -Xmx${mem}g" \
         HaplotypeCaller \
-        -R ${ref} \
-        -I ${bam} \
+        --reference ${ref} \
+        --input ${bam} \
         --emit-ref-confidence GVCF \
         --dbsnp ${dbsnp} \
-        ${region} \
-        --genotyping-mode DISCOVERY \
+        ${intervals} \
         -A Coverage -A FisherStrand -A StrandOddsRatio -A MappingQualityRankSumTest -A QualByDepth -A RMSMappingQuality -A ReadPosRankSumTest \
         -stand-call-conf ${call_conf} \
         --sample-ploidy 2 \
         -O ${sample_id}.${mt}.g.vcf.gz
     """
 }
-
 
 process run_sort_male_gvcfs {
     tag { "${sample_id}.sMgVCF" }
@@ -281,16 +276,16 @@ process run_sort_male_gvcfs {
     
     """
     gatk --java-options "-XX:+UseSerialGC -Xms1g -Xmx${mem}g" SortVcf \
-        -I ${sample_id}.X_PAR1.g.vcf.gz \
-        -I ${sample_id}.X_PAR2.g.vcf.gz \
-        -I ${sample_id}.X_nonPAR.g.vcf.gz \
-        -O ${sample_id}.X.g.vcf.gz
+        --INPUT ${sample_id}.X_PAR1.g.vcf.gz \
+        --INPUT ${sample_id}.X_PAR2.g.vcf.gz \
+        --INPUT ${sample_id}.X_nonPAR.g.vcf.gz \
+        --OUTPUT ${sample_id}.X.g.vcf.gz
   
     gatk --java-options "-XX:+UseSerialGC -Xms1g -Xmx${mem}g" SortVcf \
-        -I ${sample_id}.Y_PAR1.g.vcf.gz \
-        -I ${sample_id}.Y_PAR2.g.vcf.gz \
-        -I ${sample_id}.Y_nonPAR.g.vcf.gz \
-        -O ${sample_id}.Y.g.vcf.gz
+        --INPUT ${sample_id}.Y_PAR1.g.vcf.gz \
+        --INPUT ${sample_id}.Y_PAR2.g.vcf.gz \
+        --INPUT ${sample_id}.Y_nonPAR.g.vcf.gz \
+        --OUTPUT ${sample_id}.Y.g.vcf.gz
     """
 }
 
@@ -305,6 +300,7 @@ process run_combine_sample_gvcfs {
   
     output:
 	tuple val(sample_id), path("${sample_id}.g.vcf.gz"), path("${sample_id}.g.vcf.gz.tbi"), emit: combined_calls
+    tuple val(sample_id), val("${outdir}/${params.workflow}/${project_name}/${sample_id}/${sample_id}.g.vcf.gz"), emit: gvcf
   
     script:
     mem = task.memory.toGiga() - 4
@@ -344,8 +340,8 @@ process run_combine_sample_gvcfs {
     find . -iname "${sample_id}.${mt}.g.vcf.gz" >> ${sample_id}.gvcf.list
 
     gatk --java-options "-XX:+UseSerialGC -Xms1g -Xmx${mem}g" GatherVcfs \
-        -I ${sample_id}.gvcf.list \
-        -O ${sample_id}.g.vcf.gz
+        --INPUT ${sample_id}.gvcf.list \
+        --OUTPUT ${sample_id}.g.vcf.gz
  
     # GatherVCF does not index the VCF. The VCF will be indexed in the next tabix operation.
     tabix -p vcf ${sample_id}.g.vcf.gz
@@ -366,5 +362,22 @@ process run_create_gvcf_md5sum {
     """
     md5sum ${gvcf} > ${gvcf}.md5
     md5sum ${index} > ${index}.md5
+    """
+}
+
+process run_create_gvcf_samplesheet {
+    tag { "write_samplesheet" }
+    memory { 4.GB * task.attempt }
+    publishDir "${outdir}/${params.workflow}/${project_name}/", mode: 'copy', overwrite: false
+
+    input:
+    path(samplesheet)
+
+    output:
+    path("samplesheet_${project_name}_gvcfs.tsv"), emit: bams_samplesheet
+
+    """
+    echo -e "SampleID\tGender\tFastqR1\tFastqR2\tFlowcell\tLane\tBAM\tgVCF" > samplesheet_${project_name}_gvcfs.tsv
+    cat ${samplesheet} >> samplesheet_${project_name}_gvcfs.tsv
     """
 }

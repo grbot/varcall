@@ -42,7 +42,7 @@ process log_tool_version_samtools_bwa {
 }
 
 process log_tool_version_gatk {
-    tag { " tool_ver" }
+    tag { "tool_ver" }
     label 'gatk'
     debug true
     publishDir "${outdir}/${params.workflow}", mode: 'copy', overwrite: true
@@ -51,8 +51,9 @@ process log_tool_version_gatk {
     path("tool.gatk.version"), emit: tool_version_gatk
     
     script:
-    mem = task.memory.toGiga() - 3
+    mem = task.memory.toGiga() - 1
     """
     gatk --java-options "-XX:+UseSerialGC -Xss456k -Xms500m -Xmx${mem}g" --version > tool.gatk.version 2>&1
     """
 }
+

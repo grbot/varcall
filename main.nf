@@ -24,53 +24,6 @@ if (params.build == "b37") {
 } else {
 }
 
-// SET SAMPLE SHEET INPUT FOR THE WORKFLOWS THAT REQUIRE THEM
-if (params.workflow == 'align' || params.workflow == 'generate-gvcfs' || params.workflow == 'combine-gvcfs' || params.workflow == 'genomics-db-import') {
-    // GET SAMPLE INFO FROM SAMPLE SHEET - MINIMUM INFORMATION THAT ARE NEEDED IN THE SAMPLE SHEET ARE SAMPLEID, FORWARD AND REVERSE READ FILE LOCATION
-    Channel.fromPath(params.sample_sheet)
-        .splitCsv(header: true, sep: '\t')
-        .map { row -> [ "${row.SampleID}",
-                       "${row.Gender}",
-                       "${row.FastqR1}",
-                       "${row.FastqR2}",
-                       "${row.Flowcell}",
-                       "${row.Lane}",
-                       "${row.BAM}",
-                       "${row.gVCF}" ] }
-        .set { samples }
-    if (params.workflow == 'align'){
-        // GET INPUT FOR ALIGN WORKFLOW: SAMPLE_ID, FORWARD_READ, REVERSE_READ, FLOWCELL, LANE
-        samples.map { [ it[0], it[2], it[3], it[4], it[5]] }
-            .set { samples_align }
-    } else if (params.workflow == 'generate-gvcfs') {
-        // GET INPUT FOR GENERATE-GVCFS WORKFLOW: SAMPLE_ID, GENDER, BAM
-        samples.map { [ it[0], it[1], it[6]] }
-            .set { samples_generate_gvcfs }
-        // GET INPUT (GENDER BASED) FOR GENERATE-GVCFS WORKFLOW: SAMPLE_ID, GENDER, BAM
-        samples_generate_gvcfs.filter { it[1] == 'M' }.set { samples_generate_gvcfs_males }
-        samples_generate_gvcfs.filter { it[1] == 'F' }.set { samples_generate_gvcfs_females }
-        samples_generate_gvcfs.filter { !(it[1] =~ 'F|M') }.set { samples_generate_gvcfs_nosex }
-    } else if (params.workflow == 'combine-gvcfs' || params.workflow == 'genomics-db-import') {
-        // GET INPUT FOR COMBINE-GVCFS/GENOMIC-DB-IMPORT WORKFLOW: SAMPLE_ID, GVCF
-        samples.map { [ it[0], it[7] ] }
-            .set { samples_gvcfs_list }
-    }
-} else if ( params.workflow == 'genome-calling') {
-    Channel.fromPath([params.gvcf, "${params.gvcf}.tbi"])
-        .toList()
-        .set { gvcf }
-} else {}
-
-// ARE WE USING INTERVALS INSTEAD OF CHROMOSOMES? --use_intervals
-if (params.use_intervals) {
-    Channel.fromPath(params.intervals, type: 'file')
-        .splitText()
-        .map { it -> it.trim() }
-        .filter { it -> it =~ 'chr22' }
-        .collect()
-        .set { chroms_all }
-}
-
 //----- INCLUDE MODULES
 // GENERAL
 include { print_sample_info; log_tool_version_samtools_bwa; log_tool_version_gatk } from './modules/modules-general.nf'
@@ -92,13 +45,13 @@ include { run_haplotype_caller_auto as run_haplotype_caller_auto_nosex;
          run_combine_sample_gvcfs as run_combine_sample_gvcfs_females;
          run_create_gvcf_md5sum as run_create_gvcf_md5sum_nosex;
          run_create_gvcf_md5sum as run_create_gvcf_md5sum_males;
-         run_create_gvcf_md5sum as run_create_gvcf_md5sum_females } from './modules/modules-generate-gvcf.nf'
+         run_create_gvcf_md5sum as run_create_gvcf_md5sum_females; run_create_gvcf_samplesheet } from './modules/modules-generate-gvcf.nf'
 // COMBINE GVCFS
 include { run_combine_gvcfs; run_concat_gvcfs } from './modules/modules-combine-gvcfs.nf'
 // GENOMICS DB IMPORT
 include { run_genomics_db_import_new; run_backup_genomic_db; run_genomics_db_import_update } from './modules/modules-genomics-db-import.nf'
 // GENOME CALLING
-include { run_genotype_gvcf_on_genome_gvcf } from './modules/modules-genome-calling.nf'
+include { run_genotype_gvcf_on_genome_db } from './modules/modules-genome-calling.nf'
 // run_concat_vcf; run_vqsr_on_snps; run_apply_vqsr_on_snps;
 //          run_vqsr_on_indels; run_apply_vqsr_on_indels } 
 
@@ -162,6 +115,13 @@ workflow GENERATE_GVCFS {
         .set { females }
     run_combine_sample_gvcfs_females(females)
     run_create_gvcf_md5sum_females(run_combine_sample_gvcfs_females.out.combined_calls)
+    // WRITE OUT SAMPLESHEET
+    samples_nosex.join(run_combine_sample_gvcfs_nosex.out.gvcf)
+        .concat (samples_males.join(run_combine_sample_gvcfs_males.out.gvcf),
+                 samples_females.join(run_combine_sample_gvcfs_females.out.gvcf))
+        .collectFile() { it ->  [ 'samplesheet_gvcfs.tsv', "${it[0]}\t${it[1]}\t.\t.\t.\t.\t${it[2]}\t${it[3]}\n" ] }
+        .set { out_gvcf_samplesheet }
+    run_create_gvcf_samplesheet(out_gvcf_samplesheet)
 }
 
 // COMBINE GVCFS - SKIPPING TESTING 
@@ -187,7 +147,7 @@ workflow COMBINE_GVCFS {
 // GENOMICS DB IMPORT
 workflow GENOMICS_DB_IMPORT {
     take:
-    samples_gvcfs_list
+    samples_gvcfs
     chroms_all
 
     main:
@@ -198,8 +158,8 @@ workflow GENOMICS_DB_IMPORT {
                 exit 1
             } else if ( !db.exists() ) {
                 println "Creating new DB:${db}"
-                samples_gvcfs_list
-                    .collectFile() { item -> [ 'gvcf.list', "${item.get(1)}" + '\n' ] }
+                samples_gvcfs
+                    .collectFile() { item -> [ 'gvcf.list', "${item.get(0)}\t${item.get(1)}" + '\n' ] }
                     .set { gvcf_list }
                 run_genomics_db_import_new(gvcf_list, chroms_all)
             }
@@ -209,8 +169,8 @@ workflow GENOMICS_DB_IMPORT {
             if ( db.exists() ) {
                 println "DB:${db} exists. Making a backup copy before update."
                 run_backup_genomic_db()
-                samples_gvcfs_list
-                    .collectFile() { item -> [ 'gvcf.list', "${item.get(1)}" + '\n' ] }
+                samples_gvcfs
+                    .collectFile() { item -> [ 'gvcf.list', "${item.get(0)}\t${item.get(1)}" + '\n' ] }
                     .set { gvcf_list }
                 run_genomics_db_import_update(gvcf_list, chroms_all, run_backup_genomic_db.out.backup_status)
             } else if ( !db.exists() ) {
@@ -228,7 +188,7 @@ workflow GENOME_CALLING {
     chroms_all
     
     main:
-    run_genotype_gvcf_on_genome_db(chroms_all)
+    run_genotype_gvcf_on_genome_db(chroms_all.filter { it -> it =~ 'chr22:31064077-33652749' } )
     // run_genotype_gvcf_on_genome_gvcf.out.gg_vcf_set
     //     .flatten()
     //     .collect()
@@ -246,19 +206,75 @@ workflow {
     switch (workflow) {
             // ===== MAIN WORKFLOWS
         case['align']:
+            Channel.fromPath(params.sample_sheet_fastqs)
+                .splitCsv(header: true, sep: '\t')            
+                .map { row -> [ "${row.SampleID}",
+                               "${row.Gender}",
+                               "${row.FastqR1}",
+                               "${row.FastqR2}",
+                               "${row.Flowcell}",
+                               "${row.Lane}",
+                               "${row.BAM}",
+                               "${row.gVCF}" ] }
+                .map { [ it[0], it[2], it[3], it[4], it[5]] }
+                .set { samples_align }
+            //
             ALIGN(samples_align)
             break
             // =====
         case['generate-gvcfs']:
-            GENERATE_GVCFS(samples_generate_gvcfs_nosex, samples_generate_gvcfs_males, samples_generate_gvcfs_females, chroms_auto, chroms_par)
+            Channel.fromPath(params.sample_sheet_bams)
+                .splitCsv(header: true, sep: '\t')
+                .map { row -> [ "${row.SampleID}",
+                               "${row.Gender}",
+                               "${row.FastqR1}",
+                               "${row.FastqR2}",
+                               "${row.Flowcell}",
+                               "${row.Lane}",
+                               "${row.BAM}",
+                               "${row.gVCF}" ] }
+                .map { [ it[0], it[1], it[6]] }
+                .set { samples_bams }
+            // GET INPUT (GENDER BASED) FOR GENERATE-GVCFS WORKFLOW: SAMPLE_ID, GENDER, BAM
+            samples_bams.filter { it[1] == 'M' }.set { samples_bams_males }
+            samples_bams.filter { it[1] == 'F' }.set { samples_bams_females }
+            samples_bams.filter { !(it[1] =~ 'F|M') }.set { samples_bams_nosex }
+            //            
+            GENERATE_GVCFS(samples_bams_nosex, samples_bams_males, samples_bams_females, chroms_auto, chroms_par)
             break
             // =====
         case['combine-gvcfs']:
+            Channel.fromPath(params.sample_sheet_gvcfs)
+                .splitCsv(header: true, sep: '\t')
+                .map { row -> [ "${row.SampleID}",
+                               "${row.Gender}",
+                               "${row.FastqR1}",
+                               "${row.FastqR2}",
+                               "${row.Flowcell}",
+                               "${row.Lane}",
+                               "${row.BAM}",
+                               "${row.gVCF}" ] }
+                .map { [ it[0], it[7] ] }
+                .set { samples_gvcfs }
+            //
             COMBINE_GVCFS(samples_gvcfs_list, chroms_all)
             break
             // =====
         case['genomics-db-import']:
-            GENOMICS_DB_IMPORT(samples_gvcfs_list, chroms_all)
+            Channel.fromPath(params.sample_sheet_gvcfs)
+                .splitCsv(header: true, sep: '\t')
+                .map { row -> [ "${row.SampleID}",
+                               "${row.Gender}",
+                               "${row.FastqR1}",
+                               "${row.FastqR2}",
+                               "${row.Flowcell}",
+                               "${row.Lane}",
+                               "${row.BAM}",
+                               "${row.gVCF}" ] }
+                .map { [ it[0], it[7] ] }
+                .set { samples_gvcfs }
+            //
+            GENOMICS_DB_IMPORT(samples_gvcfs, chroms_all)
             break
             // =====
         case['genome-calling']:
