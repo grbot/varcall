@@ -7,12 +7,15 @@ known_indels_1            = file(params.known_indels_1, type: 'file')
 known_indels_2            = file(params.known_indels_2, type: 'file')
 dbsnp                     = file(params.dbsnp, type: 'file')
 outdir                    = file(params.outdir, type: 'dir')
-target_regions            = file(params.target_regions, type: 'file')
+
 build                     = params.build
-type                      = params.type
 sample_coverage           = params.sample_coverage
 project_name              = params.project_name
 cohort_id                 = params.cohort_id
+
+type                      = params.type
+target_regions            = file(params.target_regions, type: 'file')
+
 outdir.mkdir()
 
 // 
@@ -75,6 +78,7 @@ process run_haplotype_caller_auto {
     script:
     mem = task.memory.toGiga() - 4
     if (type == "wes") {
+        intervals = "--intervals ${target_regions} --intervals ${autosome} --interval-set-rule INTERSECTION"
     } else {
         intervals = "--intervals ${autosome}"
     }
@@ -115,9 +119,9 @@ process run_haplotype_caller_males {
             base = "X_PAR1"
             ploidy = "2"
             if (type == "wes") {
-                target_regions = file(target_regions)
+                intervals = "--intervals ${target_regions} --intervals ${x}:${x_par1} --interval-set-rule INTERSECTION"                
             } else {
-                intervals = "--intervals  ${x}:${x_par1}"
+                intervals = "--intervals ${x}:${x_par1}"
             }
             break
             // =====
@@ -125,7 +129,7 @@ process run_haplotype_caller_males {
             base = "X_PAR2"
             ploidy = "2"
             if (type == "wes") {
-                target_regions = file(target_regions)
+                intervals = "--intervals ${target_regions} --intervals ${x}:${x_par2} --interval-set-rule INTERSECTION"
             } else {
                 intervals = "--intervals ${x}:${x_par2}"
             }
@@ -135,7 +139,7 @@ process run_haplotype_caller_males {
             base = "X_nonPAR"
             ploidy = "1"
             if (type == "wes") {
-                target_regions = file(target_regions)
+                intervals = "--intervals ${target_regions} --intervals ${x} --exclude-intervals ${x}:${x_par1} --exclude-intervals ${x}:${x_par2} --interval-set-rule INTERSECTION"
             } else {
                 intervals = "--intervals ${x} --exclude-intervals ${x}:${x_par1} --exclude-intervals ${x}:${x_par2}"
             }
@@ -145,7 +149,7 @@ process run_haplotype_caller_males {
             base = "Y_PAR1"
             ploidy = "2"
             if (type == "wes") {
-                target_regions = file(target_regions)
+                intervals = "--intervals ${target_regions} --intervals ${y}:${y_par1} --interval-set-rule INTERSECTION"
             } else {
                 intervals = "--intervals ${y}:${y_par1}"
             }
@@ -155,7 +159,7 @@ process run_haplotype_caller_males {
             base = "Y_PAR2"
             ploidy = "2"
             if (type == "wes") {
-                target_regions = file(target_regions)
+                intervals = "--intervals ${target_regions} --intervals ${y}:${y_par2} --interval-set-rule INTERSECTION"
             } else {
                 intervals = "--intervals ${y}:${y_par2}"
             }                    
@@ -165,7 +169,7 @@ process run_haplotype_caller_males {
             base = "Y_nonPAR"
             ploidy = "1"
             if (type == "wes") {
-                target_regions = file(target_regions)
+                    intervals = "--intervals ${target_regions} --intervals ${y} --exclude-intervals ${y}:${y_par1} --exclude-intervals ${y}:${y_par2} --interval-set-rule INTERSECTION"
             } else {
                 intervals = "--intervals ${y} --exclude-intervals ${y}:${y_par1} --exclude-intervals ${y}:${y_par2}"
             }
@@ -204,7 +208,7 @@ process run_haplotype_caller_females {
     script:
     mem = task.memory.toGiga() - 4
     if (type == "wes") {
-        target_regions = file(target_regions)
+        intervals = "--intervals ${target_regions} --intervals ${x} --interval-set-rule INTERSECTION"
     } else {
         intervals = "--intervals ${x}"
     }
@@ -240,7 +244,8 @@ process run_haplotype_caller_mt {
     script:
     mem = task.memory.toGiga() - 4
     if (type == "wes") {
-        target_regions = file(target_regions)
+        intervals = "--intervals ${mt}"
+        // intervals = "--intervals ${target_regions} --intervals ${mt} --interval-set-rule INTERSECTION"
     } else {
         intervals = "--intervals ${mt}"
     }
@@ -293,14 +298,14 @@ process run_combine_sample_gvcfs {
     tag { "${sample_id}.cCgVCF" }
     label 'gatk'
     memory { 8.GB * task.attempt }
-    publishDir "${outdir}/${params.workflow}/${project_name}/${sample_id}", mode: 'copy', overwrite: false
+    publishDir "${outdir}/${params.workflow}/${project_name}/gvcfs", mode: 'copy', overwrite: false
     
     input:
     tuple val(sample_id), path(gvcfs), path(indexes)
   
     output:
 	tuple val(sample_id), path("${sample_id}.g.vcf.gz"), path("${sample_id}.g.vcf.gz.tbi"), emit: combined_calls
-    tuple val(sample_id), val("${outdir}/${params.workflow}/${project_name}/${sample_id}/${sample_id}.g.vcf.gz"), emit: gvcf
+    tuple val(sample_id), val("${outdir}/${params.workflow}/${project_name}/gvcfs/${sample_id}.g.vcf.gz"), emit: gvcf_out_loc
   
     script:
     mem = task.memory.toGiga() - 4
@@ -351,7 +356,7 @@ process run_combine_sample_gvcfs {
 process run_create_gvcf_md5sum {
     tag { "${sample_id}.cGMD5" }
     memory { 4.GB * task.attempt }
-    publishDir "${outdir}/${params.workflow}/${project_name}/${sample_id}", mode: 'copy', overwrite: false
+    publishDir "${outdir}/${params.workflow}/${project_name}/gvcfs", mode: 'copy', overwrite: false
 
     input:
     tuple val(sample_id), path(gvcf), path(index)
@@ -365,19 +370,19 @@ process run_create_gvcf_md5sum {
     """
 }
 
-process run_create_gvcf_samplesheet {
-    tag { "write_samplesheet" }
-    memory { 4.GB * task.attempt }
-    publishDir "${outdir}/${params.workflow}/${project_name}/", mode: 'copy', overwrite: false
+// process run_create_gvcf_samplesheet {
+//     tag { "write_samplesheet" }
+//     memory { 4.GB * task.attempt }
+//     publishDir "${outdir}/${params.workflow}/${project_name}/", mode: 'copy', overwrite: false
 
-    input:
-    path(samplesheet)
+//     input:
+//     path(samplesheet)
 
-    output:
-    path("samplesheet_${project_name}_gvcfs.tsv"), emit: bams_samplesheet
+//     output:
+//     path("${project_name}_gvcfs_samplesheet_.tsv"), emit: bams_samplesheet
 
-    """
-    echo -e "SampleID\tGender\tFastqR1\tFastqR2\tFlowcell\tLane\tBAM\tgVCF" > samplesheet_${project_name}_gvcfs.tsv
-    cat ${samplesheet} >> samplesheet_${project_name}_gvcfs.tsv
-    """
-}
+//     """
+//     echo -e "SampleID\tGender\tFastqR1\tFastqR2\tFlowcell\tLane\tBAM\tgVCF" > samplesheet_${project_name}_gvcfs.tsv
+//     cat ${samplesheet} >> ${project_name}_gvcfs_samplesheet.tsv
+//     """
+// }

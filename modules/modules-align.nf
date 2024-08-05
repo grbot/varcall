@@ -11,7 +11,7 @@ outdir         = file(params.outdir, type: 'dir')
 outdir.mkdir()
 
 process run_bwa {
-    tag { "${sample_id}.rBwa" }
+    tag { "${sample_id}" }
     label 'bwa_samtools'
     memory { 64.GB * task.attempt }
     cpus { "${params.bwa_threads}" }
@@ -53,7 +53,7 @@ process run_bwa {
 }
 
 process run_mark_duplicates {
-    tag { "${sample_id}.rMD" }
+    tag { "${sample_id}" }
     label 'gatk'
     memory { 16.GB * task.attempt }
 
@@ -80,7 +80,7 @@ process run_mark_duplicates {
 }
 
 process run_create_recalibration_table {
-    tag { "${sample_id}.rCRT" }
+    tag { "${sample_id}" }
     label 'gatk'
     memory { 16.GB * task.attempt }
 
@@ -107,7 +107,7 @@ process run_create_recalibration_table {
 }
 
 process run_recalibrate_bam {
-    tag { "${sample_id}.rRB" }
+    tag { "${sample_id}" }
     label 'gatk'
     memory { 16.GB * task.attempt }
     cpus { 2 }
@@ -134,16 +134,17 @@ process run_recalibrate_bam {
 }
 
 process bam_to_cram {
-    tag { "${sample_id}.btC" }
+    tag { "${sample_id}" }
     label 'bwa_samtools'
     memory { 4.GB * task.attempt }
-    publishDir "${outdir}/${params.workflow}/${project_name}/${sample_id}", mode: 'copy', overwrite: false
+    publishDir "${outdir}/${params.workflow}/${project_name}/crams", mode: 'copy', overwrite: false
 
     input:
     tuple val(sample_id), path(bam), path(index)
 
     output:
     tuple val(sample_id), path("${bam.baseName}.cram"), path("${bam.baseName}.crai"), emit: cram_file
+    tuple val(sample_id), val("${outdir}/${params.workflow}/${project_name}/crams/${bam.baseName}.cram"), emit: cram_out_loc
 
     """
     samtools view --reference ${ref} \
@@ -153,11 +154,11 @@ process bam_to_cram {
 }
 
 process run_cram_flagstat {
-    tag { "${sample_id}.rCF" }
+    tag { "${sample_id}" }
     label 'bwa_samtools'
     memory { 4.GB * task.attempt }
     cpus { "${params.bwa_threads}" }
-    publishDir "${outdir}/${params.workflow}/${project_name}/${sample_id}", mode: 'copy', overwrite: false
+    publishDir "${outdir}/${params.workflow}/${project_name}/crams", mode: 'copy', overwrite: false
 
     input:
     tuple val(sample_id), path(cram), path(index)
@@ -173,9 +174,9 @@ process run_cram_flagstat {
 }
 
 process create_cram_md5sum {
-    tag { "${sample_id}.cCMD5" }
+    tag { "${sample_id}" }
     memory { 4.GB * task.attempt }
-    publishDir "${outdir}/${params.workflow}/${project_name}/${sample_id}", mode: 'copy', overwrite: false
+    publishDir "${outdir}/${params.workflow}/${project_name}/crams", mode: 'copy', overwrite: false
 
     input:
     tuple val(sample_id), path(cram), path(index), path(flagstat)

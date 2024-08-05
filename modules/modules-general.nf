@@ -29,7 +29,7 @@ process log_tool_version_samtools_bwa {
     tag { "tool_ver" }
     label 'bwa_samtools'
     debug true
-    publishDir "${outdir}/${params.worflow}", mode: 'copy', overwrite: true
+    publishDir "${outdir}/${params.workflow}", mode: 'copy', overwrite: true
 
     output:
     path("tool.samtools.bwa.version"), emit: tool_version_samtools_bwa
