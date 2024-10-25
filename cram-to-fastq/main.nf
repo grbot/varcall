@@ -14,7 +14,7 @@ ref_seq = Channel.fromPath(params.ref_seq).toList()
 
 process collate {
     tag { "${params.project_name}.${sample_id}.C" }
-    memory { 16.GB * task.attempt }
+    memory { 32.GB * task.attempt }
     publishDir "${params.out_dir}/${sample_id}", mode: 'symlink', overwrite: false
     label 'samtools'
     input:
@@ -26,7 +26,7 @@ process collate {
 
     script:
     """
-    samtools collate --reference ${ref} -o ${sample_id}.collate.bam  ${bam_file} tmp.collate  
+    samtools collate --reference ${ref} -O ${bam_file}  ${sample_id}.collate
     """
 }
 
