@@ -36,10 +36,22 @@ if ( sample_coverage == "high" ) {
     call_conf = 30
 }
 
+// BUILD
+if (build == "b37") {
+    
+} else if (build == "b38"){
+    
+} else {
+    println "\n============================================================================================="
+    println "Please specify a genome build (b37 or b38)!"
+    println "=============================================================================================\n"
+    exit 1
+}
+
 process run_genotype_gvcf_on_genome_db {
     tag { "${project_name}.${cohort_id}.${interval}.rGGoG" }
     memory { 48.GB * task.attempt }
-    publishDir "${outdir}/${params.workflow}/${project_name}/${interval.replaceAll(":","_")}_vcf", mode: 'copy', overwrite: true
+    publishDir "${outdir}/${params.workflow}/${project_name}/${interval}_vcf", mode: 'copy', overwrite: true
     label 'gatk'
     time = 24.h
     
@@ -56,7 +68,7 @@ process run_genotype_gvcf_on_genome_db {
     gatk --java-options  "-XX:+UseSerialGC -Xms4g -Xmx${mem}g" GenotypeGVCFs \
         --reference ${ref} \
         --intervals ${interval} \
-        --variant gendb://${db}/${interval.replaceAll(":","_")}.gdb \
+        --variant gendb://${db}/${interval}.gdb \
         -stand-call-conf ${call_conf} \
         --annotation Coverage \
         --annotation FisherStrand \
@@ -66,7 +78,7 @@ process run_genotype_gvcf_on_genome_db {
         --annotation RMSMappingQuality \
         --annotation ReadPosRankSumTest \
         --allow-old-rms-mapping-quality-annotation-data \
-        --output "${project_name}.${interval.replaceAll(":","_")}.vcf.gz"
+        --output "${project_name}.${interval}.vcf.gz"
     """
 }
 
@@ -110,6 +122,7 @@ process run_genotype_gvcf_on_genome_db {
 //         -output "${project_name}.${chr}.vcf.gz"
 //     """
 // }
+
 
 process run_concat_vcf {
     tag { "${project_name}.${project_name}.rCV" }

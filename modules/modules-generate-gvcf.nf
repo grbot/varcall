@@ -369,20 +369,3 @@ process run_create_gvcf_md5sum {
     md5sum ${index} > ${index}.md5
     """
 }
-
-// process run_create_gvcf_samplesheet {
-//     tag { "write_samplesheet" }
-//     memory { 4.GB * task.attempt }
-//     publishDir "${outdir}/${params.workflow}/${project_name}/", mode: 'copy', overwrite: false
-
-//     input:
-//     path(samplesheet)
-
-//     output:
-//     path("${project_name}_gvcfs_samplesheet_.tsv"), emit: bams_samplesheet
-
-//     """
-//     echo -e "SampleID\tGender\tFastqR1\tFastqR2\tFlowcell\tLane\tBAM\tgVCF" > samplesheet_${project_name}_gvcfs.tsv
-//     cat ${samplesheet} >> ${project_name}_gvcfs_samplesheet.tsv
-//     """
-// }

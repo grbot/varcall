@@ -22,7 +22,7 @@ process run_genomics_db_import_new {
     each chr
 
     output:
-    path("${chr.replaceAll(":","_")}.gdb"), emit: interval_db
+    path("${chr}.gdb"), emit: interval_db
     
     script:
     mem = task.memory.toGiga() - ( task.memory.toGiga() * 1/5 )
@@ -38,11 +38,12 @@ process run_genomics_db_import_new {
         --bypass-feature-reader \
         --consolidate \
         --genomicsdb-shared-posixfs-optimizations \
-        --genomicsdb-workspace-path ${chr.replaceAll(":","_")}.gdb
+        --genomicsdb-workspace-path ${chr}.gdb
     """
 }
 
 // --reader-threads ${rthreads} \
+// --genomicsdb-workspace-path ${chr.replaceAll(":","_")}.gdb
 
 // I'VE COMMENTED THE ACTUAL DB BACKUP COMMAND - DB T00 LARGE
 process run_backup_genomic_db {
@@ -70,7 +71,7 @@ process run_genomics_db_import_update {
     path(backup_status)
 
     output:
-    path("${chr.replaceAll(":","_")}.gdb"), emit: interval_db
+    path("${chr}.gdb"), emit: interval_db
     
     script:
     mem = task.memory.toGiga() - 2
@@ -80,6 +81,6 @@ process run_genomics_db_import_update {
         --variant ${gvcf_list} \
         --batch-size 50 \
         --reader-threads 5 \
-        --genomicsdb-update-workspace-path ${chr.replaceAll(":","_")}.gdb
+        --genomicsdb-update-workspace-path ${chr}.gdb
     """
 }
