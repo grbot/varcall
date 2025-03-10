@@ -13,7 +13,7 @@ outdir.mkdir()
 process run_bwa {
     tag { "${sample_id}" }
     label 'bwa_samtools'
-    memory { 64.GB * task.attempt }
+    memory { 16.GB * task.attempt }
     cpus { "${params.bwa_threads}" }
     
     input:
