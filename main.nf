@@ -136,9 +136,9 @@ workflow GENERATE_GVCFS {
 
     // GENERATE_GVCFS: NO SEX
     run_haplotype_caller_auto_nosex(samples_nosex, chroms_auto)
-    run_haplotype_caller_mt_nosex(samples_nosex)
+    // run_haplotype_caller_mt_nosex(samples_nosex)
     run_haplotype_caller_auto_nosex.out.auto_calls.groupTuple()
-        .join(run_haplotype_caller_mt_nosex.out.mt_calls.groupTuple())
+        // .join(run_haplotype_caller_mt_nosex.out.mt_calls.groupTuple())
         .map { it -> [ it[0], it.flatten().findAll { it =~ 'g.vcf.gz$' }, it.flatten().findAll { it =~ 'g.vcf.gz.tbi$' } ] }
         .set { nosex }
     run_combine_sample_gvcfs_nosex(nosex)
