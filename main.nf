@@ -5,6 +5,8 @@ nextflow.enable.dsl=2
 workflow                  = params.workflow
 db                        = file(params.db_path, type: 'dir')
 db_update                 = params.db_update
+samplesheet_dir           = file(params.outdir + "/samplesheets", type: 'dir')
+samplesheet_dir.mkdir()
 
 // SET CHROMOSOMES ACCORDING TO GENOME BUILD (B37/B38)
 if (params.build == "b37") {
@@ -86,6 +88,7 @@ workflow ALIGN {
     create_cram_md5sum(run_cram_flagstat.out.cram_stats)
 
     // CREATE UPDATED SAMPLESHEET (BAMS/CRAMS ADDED)
+    samplesheet_dir.mkdir()
     Channel.of("SampleID", "Gender", "FastqR1", "FastqR2", "Flowcell", "Lane", "BAM", "gVCF")
         .collect()
         .set { header }
@@ -101,8 +104,8 @@ workflow ALIGN {
         .flatten()
         .buffer( size: 8, remainder: false )
         .collectFile( sort:'index' ) { it -> [
-            "${params.outdir}/${params.workflow}/${params.project_name}/${params.project_name}_bams_samplesheet.tsv",
-            it.join("\t") + '\n'] }
+            "${samplesheet_dir}/${params.project_name}_bam_samplesheet.tsv", it.join("\t") + '\n'
+        ] }
 }
 
 // 2. GENERATE GVCFS WORKFLOW - TESTED THOROUGHLY AND WORKS FINE
@@ -164,6 +167,7 @@ workflow GENERATE_GVCFS {
     run_create_gvcf_md5sum_females(run_combine_sample_gvcfs_females.out.combined_calls)
 
     // CREATE UPDATED SAMPLESHEET (GVCFS ADDED)
+    samplesheet_dir.mkdir()
     Channel.of("SampleID", "Gender", "FastqR1", "FastqR2", "Flowcell", "Lane", "BAM", "gVCF")
         .collect()
         .set { header }
@@ -179,8 +183,8 @@ workflow GENERATE_GVCFS {
         .flatten()
         .buffer( size: 8, remainder: false )
         .collectFile( sort:'index' ) { it -> [
-            "${params.outdir}/${params.workflow}/${params.project_name}/${params.project_name}_gvcfs_samplesheet.tsv",
-            it.join("\t") + '\n'] }
+            "${samplesheet_dir}/${params.project_name}_gvcf_samplesheet.tsv", it.join("\t") + '\n'
+        ] }
 }
 
 // nextflow ./main.nf -profile wits --workflow align --project_name idcm -c idcm.config -resume 6aa25646-ef36-487c-b4d7-df0a7c1753a3

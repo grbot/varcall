@@ -178,6 +178,7 @@ process create_cram_md5sum {
     tag { "${sample_id}" }
     memory { 4.GB * task.attempt }
     publishDir "${outdir}/${params.workflow}/${project_name}/crams", mode: 'copy', overwrite: false
+    publishDir "${outdir}/${params.workflow}/${project_name}/crams", mode: 'copy', overwrite: false
 
     input:
     tuple val(sample_id), path(cram), path(index), path(flagstat)
