@@ -37,7 +37,7 @@ process run_bwa {
     flowcell=`zcat ${fastq_r1} | head -n 1 | awk -F':' '{ print \$3 }'`
     lane=`zcat ${fastq_r1} | head -n 1 | awk -F':' '{ print \$4 }'`
     readgroup_info="@RG\\tID:\$flowcell.\$lane\\tLB:LIBA\\tSM:${sample_id}\\tPL:Illumina"
-    bwa mem \
+    bwa-mem2 \
         -R \"\$readgroup_info\" \
         -t ${nr_threads}  \
         -K 100000000 \
@@ -51,6 +51,7 @@ process run_bwa {
         - > ${sample_id}.bam
     """
 }
+
 
 process run_mark_duplicates {
     tag { "${sample_id}" }
