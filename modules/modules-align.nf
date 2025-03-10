@@ -37,7 +37,7 @@ process run_bwa {
     flowcell=`zcat ${fastq_r1} | head -n 1 | awk -F':' '{ print \$3 }'`
     lane=`zcat ${fastq_r1} | head -n 1 | awk -F':' '{ print \$4 }'`
     readgroup_info="@RG\\tID:\$flowcell.\$lane\\tLB:LIBA\\tSM:${sample_id}\\tPL:Illumina"
-    bwa-mem2 \
+    bwa-mem2 mem \
         -R \"\$readgroup_info\" \
         -t ${nr_threads}  \
         -K 100000000 \
