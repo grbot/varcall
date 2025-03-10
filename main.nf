@@ -11,14 +11,15 @@ samplesheet_dir.mkdir()
 // SET CHROMOSOMES ACCORDING TO GENOME BUILD (B37/B38)
 if (params.build == "b37") {
     if ( params.workflow == 'generate-gvcfs' ) {
-        chroms_auto = (1..22).toList()
+        chroms_auto = (1..22).toList()        
         chroms_par = ["x_par1_male", "x_par2_male", "x_nonpar_male", "y_par1_male", "y_par2_male", "y_nonpar_male" ]
     } else if ( params.workflow == 'genome-calling' || params.workflow == 'combine-gvcfs' || params.workflow == 'genomics-db-import' ) {
         chroms_all = (1..22).toList() +  ["X","Y","MT"]
     }
 } else if (params.build == "b38") {
     if ( params.workflow == 'generate-gvcfs' ) {
-        chroms_auto = (1..22).toList().collect { 'chr' + "${it}" }
+        // chroms_auto = (1..22).toList().collect { 'chr' + "${it}" }
+        chroms_auto = (22).toList().collect { 'chr' + "${it}" }        
         chroms_par = ["x_par1_male", "x_par2_male", "x_nonpar_male", "y_par1_male", "y_par2_male", "y_nonpar_male" ]
     } else if ( params.workflow == 'genome-calling' || params.workflow == 'combine-gvcfs' || params.workflow == 'genomics-db-import') {
         chroms_all = (1..22).toList().collect { 'chr' + "${it}" } + ["chrX", "chrY","chrM"]
