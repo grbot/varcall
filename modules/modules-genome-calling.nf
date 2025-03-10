@@ -50,7 +50,7 @@ if (build == "b37") {
 
 process run_genotype_gvcf_on_genome_db {
     tag { "${project_name}.${cohort_id}.${interval}.rGGoG" }
-    memory { 48.GB * task.attempt }
+    memory { 30.GB * task.attempt }
     publishDir "${outdir}/${params.workflow}/${project_name}/${interval}_vcf", mode: 'copy', overwrite: true
     label 'gatk'
     time = 24.h
