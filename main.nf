@@ -22,7 +22,8 @@ if (params.build == "b37") {
         chroms_auto = ['chr20']
         chroms_par = ["x_par1_male", "x_par2_male", "x_nonpar_male", "y_par1_male", "y_par2_male", "y_nonpar_male" ]
     } else if ( params.workflow == 'genome-calling' || params.workflow == 'combine-gvcfs' || params.workflow == 'genomics-db-import') {
-        chroms_all = (1..22).toList().collect { 'chr' + "${it}" } + ["chrX", "chrY","chrM"]
+        // chroms_all = (1..22).toList().collect { 'chr' + "${it}" } + ["chrX", "chrY","chrM"]
+        chroms_all = ['chr20']
     }
 } else {
 }

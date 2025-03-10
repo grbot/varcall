@@ -11,7 +11,7 @@ outdir.mkdir()
 process run_genomics_db_import_new {
     tag { "${project_name}.${chr}.rGDIN" }
     label 'gatk'
-    memory { 250.GB * task.attempt }
+    memory { 30.GB * task.attempt }
     time '240h'
     cpus 2
     errorStrategy 'finish'
